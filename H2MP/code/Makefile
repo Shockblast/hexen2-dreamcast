@@ -43,23 +43,21 @@ WIN_SOFT_OBJS = vid_win.o
 WIN_GL_OBJS = gl_vidnt.o
 
 DC_OBJS = cd_dc.o in_dc.o sys_dc.o midi_null.o snddma_dc.o snd_dma.o snd_mem.o snd_mix_dc.o \
-	vmuheader.o support/fnmatch.o dc/aica.o  dc/fake_cdda.o dc/fs_mem.o
+	vmuheader.o support/fnmatch.o dc/aica.o  dc/fake_cdda.o dc/fs_mem.o dc/dcmenu.o
 
 OBJS = $(COMMON_OBJS) $(SOFT_OBJS) $(DC_OBJS) $(NET_NULL_OBJS) vid_dc.o
 GLOBJS = $(COMMON_OBJS) $(GL_OBJS) $(DC_OBJS) $(NET_NULL_OBJS) gl_viddc.o
 
 LDFLAGS = -nostartfiles -Wl,-Ttext=0x8c010000
-STARTUP = startup.o 
-
-LDFLAGS = -nostartfiles -Wl,-Ttext=0x8c010000 startup.o syscalls.o
+STARTUP =  dc/startup.o dc/syscalls.o
 
 all: glhexen2.elf
 
-hexen2.elf : $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o hexen2.elf $(OBJS) -lz -lm -L/prog/kos-1.1.7/lib -lkallisti -llwip4 -lc -lm
+hexen2.elf : $(OBJS) $(STARTUP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o hexen2.elf $(STARTUP) $(OBJS) -lz -lm -L/prog/kos-1.1.7/lib -lkallisti -llwip4 -lc -lm
 
-glhexen2.elf : $(GLOBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o glhexen2.elf $(GLOBJS) -lz -lm -L/prog/kos-1.1.7/lib -lgl -ldcutils -lkallisti -lc -lm
+glhexen2.elf : $(GLOBJS) $(STARTUP)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o glhexen2.elf $(STARTUP) $(GLOBJS) -lz -lm -L/prog/kos-1.1.7/lib -lgl -ldcutils -lkallisti -lc -lm
 
 
 #	for optimize problem

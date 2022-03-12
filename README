@@ -1,0 +1,132 @@
+Hexen II for Dreamcast
+
+	BERO <bero@geocities.co.jp>
+	http://dcquake.sourceforge.net
+
+- you should set joypad config in options/customize control before starting game.
+
+Status
+
+ - working glhexen2 only (because hexen2 soft render use x86 asm code)
+ - transpalency bug
+ - full control using pad (except console) , and mouse,keyboard support
+ - sound
+ - save to visual memory with zlib compression and icon
+ - cd-da music (but disabled -- if you read data from pc using dcload-ip and cd-da from cd, work fine)
+ - no network
+ - no midi music
+ - I don't have commercial version, so demo version data file only tested. 
+
+
+JOYSTICK ASSIGN
+
+menu:
+ UP/DOWN        select mod
+ L-TRIG/R-TRIG  scroll description text
+ START/A        start game
+ Y              disk change
+
+game:
+ joystick   keyboard  default bind
+ UP         UP        FORWARD
+ DOWN       DOWN      BACK
+ LEFT       LEFT      TURN LEFT
+ RIGHT      RIGHT     TURN RIGHT
+ A          ENTER     JUMP
+ B          SPACE     JUMP
+ X          none      none
+ Y          Y         none
+ R-TRIG     CTRL      ATTACK
+ L-TRIG     ALT       SIDESTEP
+ analog               move
+
+
+How to run
+
+- it runs CD-R or CD-ROM, dcload-ip with this directory structure:
+
+burned Hexen II demo version:
+\Hexen II Demo
+  +- data1
+       +- glhexen (optional*)
+       +- PAK0.PAK
+
+burned Hexen II commercial version full install:
+\Hexen II (??)
+  +- data1
+  |    +- glhexen (optional*)
+  |    +- PAK0.PAK
+  |    +- PAK1.PAK
+  |    +- shots/hexenXX.pcx or hexenXX.tga (optional)
+  +- other mod (optional)
+  +- other mod (optional)
+  +- games.lst (optional)
+
+(*) glhexen directory is genarated when you run glh2 on PC, 
+ or mkdir by hand and run under dcload-ip.
+ if this directory exist, loading faster.
+
+IMPORTANT:
+ latest commercial version and demo version glhenxen directory format is different.
+ DC version is same as latest commercial version.
+ if you run demo version on PC, you must delete glhexen directory. othersize you look broken object.
+
+Hexen II commercial version CD-ROM:
+ I don't know this structure, so not support.
+
+
+dcload-ip:
+
+same as burned image but on pc harddrive.
+if Hexen II directory is at C:\Hexen II Demo, under cygwin enviroment, 
+$ mount -b 'C:\Hexen II Demo' /hexen2
+and
+$ dcload-ip -t <dreamcast ip> glhexen2.elf
+
+
+Add mod/map/TC
+
+I don't test yet
+I suggest you run under dcload-ip before burning.
+
+1. Intall/Extract in Hexen II directory.
+2. read it's document
+3. make "games.lst" in Hexen II directory
+
+example
+--cut--
+#gamename,dir,cmdline,screenshot,txt
+Hexen II,data1,,hexen00.pcx,
+After the Fall,atf,,hexen00.pcx,atf.txt
+--cut--
+
+if cmdline is only "-game dirname" then you can omit cmdline.
+To make screenshot, run under dcload-ip and press F12 on DC keyboard, or run (gl)h2 on PC with 320x200 or 320x240 resolution.
+
+
+License
+
+- Hexen II source code is under GPL. (See gnu.txt)
+  To make fully working package, you need set of source code.
+  Each parts have own licence , but all licence is "compatible with GPL".
+  so whole licence of total software is under GPL.
+
+Under GPL, if you copy/modify/re-distribute this software, you MUST distribute with source.
+for example:
+ If you put local copy of this software on your site, you MUST put source too.
+ If you distribute own CD-R images such as adding mods/maps, you MUST include source in image OR distribute source with image.
+
+- Hexen II Demo version Data files have another Licence.
+ In my view, Hexen II Demo version can't re-distribute without Activison's permission.
+
+
+Acknowledgement
+
+- raven software: Thanks Hexen II source
+- GNU Project: cross compiler and assembler,gcc and binutils
+- redhat: unix like compile envircoment on Windows,Cygwin and free libc and libm for embedded systems, newlib
+- Marcus Comstedt: Pioneer of Dreamcast homebrew development,and technical document
+- Andrew Kieschnick: Dreamcast developmnt enviroment "dcload"
+- Dan Potter and contributors: usable hardware library "KallistiOS"
+- Meiwa: hardware information
+

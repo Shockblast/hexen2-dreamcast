@@ -1,0 +1,2444 @@
+Only in H2MP/code: Makefile
+Only in H2MP/code: cd_dc.c
+Only in H2MP/code: cd_null.c
+diff -u -w -x '*.o' -B H2MP.orig/code/cl_effect.c H2MP/code/cl_effect.c
+--- H2MP.orig/code/cl_effect.c	2000-11-10 19:04:34.000000000 +0900
++++ H2MP/code/cl_effect.c	2002-07-15 12:06:12.000000000 +0900
+@@ -686,8 +686,34 @@
+ 
+ // All changes need to be in SV_SendEffect(), SV_ParseEffect(),
+ // SV_SaveEffects(), SV_LoadEffects(), CL_ParseEffect()
++#ifdef USE_ZLIB
++#include <zlib.h>
++
++#define	fprintf	gzprintf
++#define	fwrite(buf,size,n,f)	gzwrite(f,buf,(size)*(n))
++
++extern int f_tostring(char *s,const char *fmt,float _float);
++
++/* zero compressed fprintf */
++static int cfprintf(gzFile f,const char *fmt,float val)
++{
++	char buf[40];
++	int len = f_tostring(buf,"%f",val);
++	buf[len++] = fmt[strlen(fmt)-1];
++	buf[len]=0;
++	return fwrite(buf,1,len,f);
++}
++
++void SV_SaveEffects(FILE *file)
++{
++	gzFile FH = (gzFile)file;
++#else
++
++#define	cfprintf fprintf
++
+ void SV_SaveEffects(FILE *FH)
+ {
++#endif
+ 	int index,count;
+ 
+ 	for(index=count=0;index<MAX_EFFECTS;index++)
+@@ -704,57 +730,57 @@
+ 			switch(sv.Effects[index].type)
+ 			{
+ 				case CE_RAIN:
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.min_org[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.min_org[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.min_org[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.max_org[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.max_org[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.max_org[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.e_size[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.e_size[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.e_size[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.dir[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.dir[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.dir[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.min_org[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.min_org[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.min_org[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.max_org[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.max_org[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.max_org[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.e_size[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.e_size[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.e_size[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.dir[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.dir[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.dir[2]);
+ 					fprintf(FH, "%d ", sv.Effects[index].Rain.color);
+ 					fprintf(FH, "%d ", sv.Effects[index].Rain.count);
+-					fprintf(FH, "%f\n", sv.Effects[index].Rain.wait);
++					cfprintf(FH, "%f\n", sv.Effects[index].Rain.wait);
+ 					break;
+ 
+ 				case CE_SNOW:
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.min_org[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.min_org[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.min_org[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.max_org[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.max_org[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.max_org[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.min_org[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.min_org[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.min_org[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.max_org[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.max_org[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.max_org[2]);
+ 					fprintf(FH, "%d ", sv.Effects[index].Rain.flags);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.dir[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.dir[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Rain.dir[2]);
+-					fprintf(FH, "%d ", sv.Effects[index].Rain.count);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.dir[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.dir[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Rain.dir[2]);
++					fprintf(FH, "%d\n", sv.Effects[index].Rain.count);
+ 					//fprintf(FH, "%d ", sv.Effects[index].Rain.veer);
+ 					break;
+ 
+ 				case CE_FOUNTAIN:
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.pos[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.pos[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.pos[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.angle[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.angle[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.angle[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.movedir[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.movedir[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Fountain.movedir[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.pos[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.pos[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.pos[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.angle[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.angle[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.angle[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.movedir[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.movedir[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Fountain.movedir[2]);
+ 					fprintf(FH, "%d ", sv.Effects[index].Fountain.color);
+ 					fprintf(FH, "%d\n", sv.Effects[index].Fountain.cnt);
+ 					break;
+ 
+ 				case CE_QUAKE:
+-					fprintf(FH, "%f ", sv.Effects[index].Quake.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Quake.origin[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Quake.origin[2]);
+-					fprintf(FH, "%f\n", sv.Effects[index].Quake.radius);
++					cfprintf(FH, "%f ", sv.Effects[index].Quake.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Quake.origin[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Quake.origin[2]);
++					cfprintf(FH, "%f\n", sv.Effects[index].Quake.radius);
+ 					break;
+ 
+ 				case CE_WHITE_SMOKE:
+@@ -771,14 +797,14 @@
+ 				case CE_FLAMEWALL:
+ 				case CE_FLAMEWALL2:
+ 				case CE_ONFIRE:
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.origin[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.origin[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.velocity[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.velocity[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.velocity[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.framelength);
+-					fprintf(FH, "%f\n", sv.Effects[index].Smoke.frame);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.origin[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.velocity[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.velocity[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.velocity[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.framelength);
++					cfprintf(FH, "%f\n", sv.Effects[index].Smoke.frame);
+ 					break;
+ 
+ 				case CE_SM_WHITE_FLASH:
+@@ -814,70 +840,70 @@
+ 				case CE_FIREWALL_LARGE:
+ 				case CE_FBOOM:
+ 				case CE_BOMB:
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Smoke.origin[1]);
+-					fprintf(FH, "%f\n", sv.Effects[index].Smoke.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Smoke.origin[1]);
++					cfprintf(FH, "%f\n", sv.Effects[index].Smoke.origin[2]);
+ 					break;
+ 
+ 				case CE_WHITE_FLASH:
+ 				case CE_BLUE_FLASH:
+ 				case CE_SM_BLUE_FLASH:
+ 				case CE_RED_FLASH:
+-					fprintf(FH, "%f ", sv.Effects[index].Flash.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Flash.origin[1]);
+-					fprintf(FH, "%f\n", sv.Effects[index].Flash.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Flash.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Flash.origin[1]);
++					cfprintf(FH, "%f\n", sv.Effects[index].Flash.origin[2]);
+ 					break;
+ 
+ 				case CE_RIDER_DEATH:
+-					fprintf(FH, "%f ", sv.Effects[index].RD.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].RD.origin[1]);
+-					fprintf(FH, "%f\n", sv.Effects[index].RD.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].RD.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].RD.origin[1]);
++					cfprintf(FH, "%f\n", sv.Effects[index].RD.origin[2]);
+ 					break;
+ 
+ 				case CE_GRAVITYWELL:
+-					fprintf(FH, "%f ", sv.Effects[index].RD.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].RD.origin[1]);
+-					fprintf(FH, "%f", sv.Effects[index].RD.origin[2]);
+-					fprintf(FH, "%d", sv.Effects[index].RD.color);
+-					fprintf(FH, "%f\n", sv.Effects[index].RD.lifetime);
++					cfprintf(FH, "%f ", sv.Effects[index].RD.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].RD.origin[1]);
++					cfprintf(FH, "%f", sv.Effects[index].RD.origin[2]);
++					cfprintf(FH, "%d", sv.Effects[index].RD.color);
++					cfprintf(FH, "%f\n", sv.Effects[index].RD.lifetime);
+ 					break;
+ 				case CE_TELEPORTERPUFFS:
+-					fprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[1]);
+-					fprintf(FH, "%f\n", sv.Effects[index].Teleporter.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[1]);
++					cfprintf(FH, "%f\n", sv.Effects[index].Teleporter.origin[2]);
+ 					break;
+ 
+ 				case CE_TELEPORTERBODY:
+-					fprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[1]);
+-					fprintf(FH, "%f\n", sv.Effects[index].Teleporter.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Teleporter.origin[1]);
++					cfprintf(FH, "%f\n", sv.Effects[index].Teleporter.origin[2]);
+ 					break;
+ 
+ 				case CE_BONESHARD:
+ 				case CE_BONESHRAPNEL:
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.origin[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.origin[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.velocity[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.velocity[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.velocity[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.angle[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.angle[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.angle[2]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.avelocity[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.avelocity[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Missile.avelocity[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.origin[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.velocity[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.velocity[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.velocity[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.angle[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.angle[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.angle[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.avelocity[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Missile.avelocity[1]);
++					cfprintf(FH, "%f\n", sv.Effects[index].Missile.avelocity[2]);
+ 					break;
+ 
+ 				case CE_CHUNK:
+-					fprintf(FH, "%f ", sv.Effects[index].Chunk.origin[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Chunk.origin[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Chunk.origin[2]);
++					cfprintf(FH, "%f ", sv.Effects[index].Chunk.origin[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Chunk.origin[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Chunk.origin[2]);
+ 					fprintf(FH, "%d ", sv.Effects[index].Chunk.type);
+-					fprintf(FH, "%f ", sv.Effects[index].Chunk.srcVel[0]);
+-					fprintf(FH, "%f ", sv.Effects[index].Chunk.srcVel[1]);
+-					fprintf(FH, "%f ", sv.Effects[index].Chunk.srcVel[2]);
+-					fprintf(FH, "%d ", sv.Effects[index].Chunk.numChunks);
++					cfprintf(FH, "%f ", sv.Effects[index].Chunk.srcVel[0]);
++					cfprintf(FH, "%f ", sv.Effects[index].Chunk.srcVel[1]);
++					cfprintf(FH, "%f ", sv.Effects[index].Chunk.srcVel[2]);
++					fprintf(FH, "%d\n", sv.Effects[index].Chunk.numChunks);
+ 					break;
+ 
+ 				default:
+@@ -890,8 +916,18 @@
+ 
+ // All changes need to be in SV_SendEffect(), SV_ParseEffect(),
+ // SV_SaveEffects(), SV_LoadEffects(), CL_ParseEffect()
++#ifdef USE_ZLIB
++
++#define	fscanf(f,fmt,arg...)	do { gzgets(f,str,sizeof(str));sscanf(str,fmt,## arg); } while(0);
++
++void SV_LoadEffects(FILE *file)
++{
++	gzFile FH = (gzFile)file;
++	char	str[1024];
++#else
+ void SV_LoadEffects(FILE *FH)
+ {
++#endif
+ 	int index,Total,count;
+ 
+ 	// Since the map is freshly loaded, clear out any effects as a result of
+@@ -902,63 +938,75 @@
+ 
+ 	for(count=0;count<Total;count++)
+ 	{
+-		fscanf(FH,"Effect: %d ",&index);
+-		fscanf(FH,"%d %f: ",&sv.Effects[index].type,&sv.Effects[index].expire_time);
++#ifdef	USE_ZLIB
++		{ int i,n;
++		for(i=0,n=0; n<4; i++)
++			if ((str[i]=gzgetc(FH))==' ') n++;
++		str[i] = 0;
++		}
++		sscanf(str,"Effect: %d %d %f: ",&index,&sv.Effects[index].type,&sv.Effects[index].expire_time);
++#else
++		fscanf(FH,"Effect: %d %d %f: ",&index,&sv.Effects[index].type,&sv.Effects[index].expire_time);
++#endif
+ 
+ 		switch(sv.Effects[index].type)
+ 		{
+ 			case CE_RAIN:
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.min_org[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.min_org[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.min_org[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.max_org[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.max_org[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.max_org[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.e_size[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.e_size[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.e_size[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.dir[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.dir[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.dir[2]);
+-				fscanf(FH, "%d ", &sv.Effects[index].Rain.color);
+-				fscanf(FH, "%d ", &sv.Effects[index].Rain.count);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Rain.wait);
++				fscanf(FH, "%f %f %f %f %f %f %f %f %f %f %f %f %d %d %f\n", 
++					&sv.Effects[index].Rain.min_org[0],
++					&sv.Effects[index].Rain.min_org[1],
++					&sv.Effects[index].Rain.min_org[2],
++					&sv.Effects[index].Rain.max_org[0],
++					&sv.Effects[index].Rain.max_org[1],
++					&sv.Effects[index].Rain.max_org[2],
++					&sv.Effects[index].Rain.e_size[0],
++					&sv.Effects[index].Rain.e_size[1],
++					&sv.Effects[index].Rain.e_size[2],
++					&sv.Effects[index].Rain.dir[0],
++					&sv.Effects[index].Rain.dir[1],
++					&sv.Effects[index].Rain.dir[2],
++					&sv.Effects[index].Rain.color,
++					&sv.Effects[index].Rain.count,
++					&sv.Effects[index].Rain.wait);
+ 				break;
+ 
+ 			case CE_SNOW:
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.min_org[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.min_org[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.min_org[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.max_org[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.max_org[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.max_org[2]);
+-				fscanf(FH, "%d ", &sv.Effects[index].Rain.flags);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.dir[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.dir[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Rain.dir[2]);
+-				fscanf(FH, "%d ", &sv.Effects[index].Rain.count);
++				fscanf(FH, "%f %f %f %f %f %f %d %f %f %f %d\n", 
++					&sv.Effects[index].Rain.min_org[0],
++					&sv.Effects[index].Rain.min_org[1],
++					&sv.Effects[index].Rain.min_org[2],
++					&sv.Effects[index].Rain.max_org[0],
++					&sv.Effects[index].Rain.max_org[1],
++					&sv.Effects[index].Rain.max_org[2],
++					&sv.Effects[index].Rain.flags,
++					&sv.Effects[index].Rain.dir[0],
++					&sv.Effects[index].Rain.dir[1],
++					&sv.Effects[index].Rain.dir[2],
++					&sv.Effects[index].Rain.count);
+ 				//fscanf(FH, "%d ", &sv.Effects[index].Rain.veer);
+ 				break;
+ 
+ 			case CE_FOUNTAIN:
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.pos[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.pos[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.pos[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.angle[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.angle[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.angle[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.movedir[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.movedir[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Fountain.movedir[2]);
+-				fscanf(FH, "%d ", &sv.Effects[index].Fountain.color);
+-				fscanf(FH, "%d\n", &sv.Effects[index].Fountain.cnt);
++				fscanf(FH, "%f %f %f %f %f %f %f %f %f %d %d\n",
++					&sv.Effects[index].Fountain.pos[0],
++					&sv.Effects[index].Fountain.pos[1],
++					&sv.Effects[index].Fountain.pos[2],
++					&sv.Effects[index].Fountain.angle[0],
++					&sv.Effects[index].Fountain.angle[1],
++					&sv.Effects[index].Fountain.angle[2],
++					&sv.Effects[index].Fountain.movedir[0],
++					&sv.Effects[index].Fountain.movedir[1],
++					&sv.Effects[index].Fountain.movedir[2],
++					&sv.Effects[index].Fountain.color,
++					&sv.Effects[index].Fountain.cnt);
+ 				break;
+ 
+ 			case CE_QUAKE:
+-				fscanf(FH, "%f ", &sv.Effects[index].Quake.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Quake.origin[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Quake.origin[2]);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Quake.radius);
++				fscanf(FH, "%f %f %f %f\n",
++					&sv.Effects[index].Quake.origin[0],
++					&sv.Effects[index].Quake.origin[1],
++					&sv.Effects[index].Quake.origin[2],
++					&sv.Effects[index].Quake.radius);
+ 				break;
+ 
+ 			case CE_WHITE_SMOKE:
+@@ -975,14 +1023,15 @@
+ 			case CE_FLAMEWALL:
+ 			case CE_FLAMEWALL2:
+ 			case CE_ONFIRE:
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.origin[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.origin[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.velocity[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.velocity[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.velocity[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.framelength);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Smoke.frame);
++				fscanf(FH, "%f %f %f %f %f %f %f %f\n",
++					&sv.Effects[index].Smoke.origin[0],
++					&sv.Effects[index].Smoke.origin[1],
++					&sv.Effects[index].Smoke.origin[2],
++					&sv.Effects[index].Smoke.velocity[0],
++					&sv.Effects[index].Smoke.velocity[1],
++					&sv.Effects[index].Smoke.velocity[2],
++					&sv.Effects[index].Smoke.framelength,
++					&sv.Effects[index].Smoke.frame);
+ 				break;
+ 
+ 			case CE_SM_WHITE_FLASH:
+@@ -1018,71 +1067,79 @@
+ 			case CE_FIREWALL_MEDIUM:
+ 			case CE_FIREWALL_LARGE:
+ 			case CE_BOMB:
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Smoke.origin[1]);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Smoke.origin[2]);
++				fscanf(FH, "%f %f %f\n", 
++					&sv.Effects[index].Smoke.origin[0],
++					&sv.Effects[index].Smoke.origin[1],
++					&sv.Effects[index].Smoke.origin[2]);
+ 				break;
+ 
+ 			case CE_WHITE_FLASH:
+ 			case CE_BLUE_FLASH:
+ 			case CE_SM_BLUE_FLASH:
+ 			case CE_RED_FLASH:
+-				fscanf(FH, "%f ", &sv.Effects[index].Flash.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Flash.origin[1]);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Flash.origin[2]);
++				fscanf(FH, "%f %f %f\n", 
++					&sv.Effects[index].Flash.origin[0],
++					&sv.Effects[index].Flash.origin[1],
++					&sv.Effects[index].Flash.origin[2]);
+ 				break;
+ 
+ 			case CE_RIDER_DEATH:
+-				fscanf(FH, "%f ", &sv.Effects[index].RD.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].RD.origin[1]);
+-				fscanf(FH, "%f\n", &sv.Effects[index].RD.origin[2]);
++				fscanf(FH, "%f %f %f\n",
++					&sv.Effects[index].RD.origin[0],
++					&sv.Effects[index].RD.origin[1],
++					&sv.Effects[index].RD.origin[2]);
+ 				break;
+ 
+ 			case CE_GRAVITYWELL:
+-				fscanf(FH, "%f ", &sv.Effects[index].RD.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].RD.origin[1]);
+-				fscanf(FH, "%f", &sv.Effects[index].RD.origin[2]);
+-				fscanf(FH, "%d", &sv.Effects[index].RD.color);
+-				fscanf(FH, "%f\n", &sv.Effects[index].RD.lifetime);
++				fscanf(FH, "%f %f %f %d %f\n",
++					&sv.Effects[index].RD.origin[0],
++					&sv.Effects[index].RD.origin[1],
++					&sv.Effects[index].RD.origin[2],
++					&sv.Effects[index].RD.color,
++					&sv.Effects[index].RD.lifetime);
+ 				break;
+ 
+ 			case CE_TELEPORTERPUFFS:
+-				fscanf(FH, "%f ", &sv.Effects[index].Teleporter.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Teleporter.origin[1]);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Teleporter.origin[2]);
++				fscanf(FH, "%f %f %f\n",
++					&sv.Effects[index].Teleporter.origin[0],
++					&sv.Effects[index].Teleporter.origin[1],
++					&sv.Effects[index].Teleporter.origin[2]);
+ 				break;
+ 
+ 			case CE_TELEPORTERBODY:
+-				fscanf(FH, "%f ", &sv.Effects[index].Teleporter.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Teleporter.origin[1]);
+-				fscanf(FH, "%f\n", &sv.Effects[index].Teleporter.origin[2]);
++				fscanf(FH, "%f %f %f\n", 
++					&sv.Effects[index].Teleporter.origin[0],
++					&sv.Effects[index].Teleporter.origin[1],
++					&sv.Effects[index].Teleporter.origin[2]);
+ 				break;
+ 
+ 			case CE_BONESHARD:
+ 			case CE_BONESHRAPNEL:
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.origin[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.origin[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.velocity[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.velocity[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.velocity[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.angle[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.angle[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.angle[2]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.avelocity[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.avelocity[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Missile.avelocity[2]);
++				fscanf(FH, "%f %f %f %f %f %f %f %f %f %f %f %f\n", 
++					&sv.Effects[index].Missile.origin[0],
++					&sv.Effects[index].Missile.origin[1],
++					&sv.Effects[index].Missile.origin[2],
++					&sv.Effects[index].Missile.velocity[0],
++					&sv.Effects[index].Missile.velocity[1],
++					&sv.Effects[index].Missile.velocity[2],
++					&sv.Effects[index].Missile.angle[0],
++					&sv.Effects[index].Missile.angle[1],
++					&sv.Effects[index].Missile.angle[2],
++					&sv.Effects[index].Missile.avelocity[0],
++					&sv.Effects[index].Missile.avelocity[1],
++					&sv.Effects[index].Missile.avelocity[2]);
+ 				break;
+ 
+ 			case CE_CHUNK:
+-				fscanf(FH, "%f ", &sv.Effects[index].Chunk.origin[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Chunk.origin[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Chunk.origin[2]);
+-				fscanf(FH, "%d ", &sv.Effects[index].Chunk.type);
+-				fscanf(FH, "%f ", &sv.Effects[index].Chunk.srcVel[0]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Chunk.srcVel[1]);
+-				fscanf(FH, "%f ", &sv.Effects[index].Chunk.srcVel[2]);
+-				fscanf(FH, "%d ", &sv.Effects[index].Chunk.numChunks);
++				fscanf(FH, "%f %f %f %d %f %f %f %d\n",
++					&sv.Effects[index].Chunk.origin[0],
++					&sv.Effects[index].Chunk.origin[1],
++					&sv.Effects[index].Chunk.origin[2],
++					&sv.Effects[index].Chunk.type,
++					&sv.Effects[index].Chunk.srcVel[0],
++					&sv.Effects[index].Chunk.srcVel[1],
++					&sv.Effects[index].Chunk.srcVel[2],
++					&sv.Effects[index].Chunk.numChunks);
+ 				break;
+ 
+ 			default:
+@@ -1092,6 +1149,12 @@
+ 	}
+ }
+ 
++#ifdef	USE_ZLIB
++#undef	fprintf
++#undef	fscanf
++#undef	fwrite
++#endif
++
+ void CL_FreeEffect(int index)
+ {	
+ 	int i;
+diff -u -w -x '*.o' -B H2MP.orig/code/cl_main.c H2MP/code/cl_main.c
+--- H2MP.orig/code/cl_main.c	2000-11-10 19:04:34.000000000 +0900
++++ H2MP/code/cl_main.c	2002-07-15 09:41:24.000000000 +0900
+@@ -6,7 +6,12 @@
+ 
+ #include "quakedef.h"
+ 
++#ifdef _WIN32
+ #include <windows.h>
++#else
++#include <dirent.h>
++#include <fnmatch.h>
++#endif
+ 
+ // we need to declare some mouse variables here, because the menu system
+ // references them even when on a unix system.
+@@ -84,10 +89,13 @@
+ 	SB_InvReset();
+ }
+ 
++#ifdef _WIN32
++
+ void CL_RemoveGIPFiles (char *path)
+ {
+ 	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
+ 	int i;
++
+ 	HANDLE handle;
+ 	WIN32_FIND_DATA filedata;
+ 	BOOL retval;
+@@ -125,6 +133,7 @@
+ qboolean CL_CopyFiles(char *source, char *pat, char *dest)
+ {
+ 	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++
+ 	HANDLE handle;
+ 	WIN32_FIND_DATA filedata;
+ 	BOOL retval,error;
+@@ -149,6 +158,99 @@
+ 	return error;
+ }
+ 
++#else
++
++void CL_RemoveMatchFiles (char *path,char *match)
++{
++	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++	int i;
++
++	DIR	*dir;
++	struct dirent	*dent;
++
++	if (path)
++	{
++		sprintf(tempdir, "%s/",path);
++	
++	}
++	else
++	{
++		i = GetTempPath(sizeof(tempdir),tempdir);
++		if (!i) 
++		{
++			sprintf(tempdir,"%s/",com_gamedir);
++		}
++	}
++
++	dir = opendir (tempdir);
++	if (dir == NULL) {
++		return;
++	}
++	do {
++		dent = readdir(dir);
++		if (dent != NULL) {
++			if (fnmatch (match, dent->d_name,FNM_PATHNAME)==0) {
++				sprintf (name, "%s%s", tempdir,dent->d_name);
++				printf("unlink %s\n",name);
++				unlink (name);
++			}
++		}
++	} while (dent != NULL);	
++	closedir (dir);
++}
++
++void CL_RemoveGIPFiles(char *path)
++{
++	CL_RemoveMatchFiles(path,"*.gip");
++}
++
++qboolean CL_CopyFiles(char *source, char *pat, char *dest)
++{
++	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++
++	char *fpat;
++	qboolean error;	
++	DIR	*dir;
++	struct dirent	*dent;
++	int offset;
++
++	error = false;
++	printf("CL_CopyFiles(%s,%s,%s)\n",source,pat,dest);
++/*
++pat is assumed to be <source>/*.gip
++as this function is currently only used for saving/loading games.
++plus, COM_CopyFile doesn't return anything, so there is no way to tell if it
++failed.
++*/
++	dir = opendir (source);
++	if (dir == NULL) {
++		return error;
++	}
++	
++	fpat = strrchr(pat, '/');
++	if (fpat == NULL)
++		fpat = pat;
++	else
++		fpat++; /* skip the '/' */
++	printf("pat=%s\n",fpat);
++	offset = strchr(fpat,'*')-fpat;
++	do {
++		dent = readdir(dir);
++		if (dent != NULL) {
++			if (!fnmatch (fpat, dent->d_name,FNM_PATHNAME)) {
++				sprintf(name,"%s%s", source, dent->d_name);
++				sprintf(tempdir,"%s%s", dest, dent->d_name+offset);
++				printf("copy %s -> %s\n",name,tempdir);
++				COM_CopyFile(name,tempdir);
++			}
++		}
++	} while (dent != NULL);	
++	closedir (dir);
++	
++	return error;
++}
++#endif
++
+ /*
+ =====================
+ CL_Disconnect
+@@ -554,7 +656,7 @@
+ 		}
+ 	}
+ 	
+-	//bobjrotate = anglemod(100*(cl.time+ent->origin[0]+ent->origin[1]));
++	//bobjrotate = anglemod(100*(cl.time{z>origin[0]{z>origin[1]));
+ 	
+ // start on the entity after the world
+ 	for (i=1,ent=cl_entities+1 ; i<cl.num_entities ; i++,ent++)
+@@ -619,7 +721,7 @@
+ // BG: Moved to r_alias.c / gl_rmain.c
+ 		//if(ent->model->flags&EF_ROTATE)
+ 		//{
+-		//	ent->angles[1] = anglemod(ent->origin[0]+ent->origin[1]
++		//	ent->angles[1] = anglemod(ent->origin[0]{z>origin[1]
+ 		//		+(100*cl.time));
+ 		//}
+ 
+diff -u -w -x '*.o' -B H2MP.orig/code/cmd.c H2MP/code/cmd.c
+--- H2MP.orig/code/cmd.c	2000-11-10 19:04:34.000000000 +0900
++++ H2MP/code/cmd.c	2002-06-25 18:15:38.000000000 +0900
+@@ -5,7 +5,9 @@
+  */
+ 
+ #include "quakedef.h"
++#ifdef _WIN32
+ #include "winquake.h"
++#endif
+ 
+ void Cmd_ForwardToServer (void);
+ void ListCommands (char *prefix);
+@@ -537,6 +539,7 @@
+ void	Cmd_AddCommand (char *cmd_name, xcommand_t function)
+ {
+ 	cmd_function_t	*cmd;
++extern qboolean	LegitCopy;
+ 
+ 	if (!LegitCopy && strcmp(cmd_name,"quit"))
+ 		return;
+Only in H2MP/code: common.bak
+diff -u -w -x '*.o' -B H2MP.orig/code/common.c H2MP/code/common.c
+--- H2MP.orig/code/common.c	2000-11-10 19:04:34.000000000 +0900
++++ H2MP/code/common.c	2002-07-24 18:11:21.000000000 +0900
+@@ -5,7 +5,9 @@
+  */
+ 
+ #include "quakedef.h"
++#ifdef _WIN32
+ #include <windows.h>
++#endif
+ 
+ #define NUM_SAFE_ARGVS  7
+ 
+@@ -16,7 +18,11 @@
+ 	{"-nomidi", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
+ 
+ cvar_t  registered = {"registered","0"};
++#ifdef H2MP
+ cvar_t  sv_gamedir = {"*gamedir","portals",false,true};
++#else
++cvar_t	sv_gamedir = {"*gamedir","data1",false,true};
++#endif
+ cvar_t  oem = {"oem","0"};
+ cvar_t  cmdline = {"cmdline","0", false, true};
+ 
+@@ -34,6 +40,8 @@
+ // demo
+ //#define PAK0_COUNT              701
+ //#define PAK0_CRC                20870
++#define PAK0DEM_COUNT		797
++#define PAK0DEM_CRC                22780
+ 
+ // retail
+ #define PAK0_COUNT              697
+@@ -967,8 +975,8 @@
+ 	while (s != in && *s != '.')
+ 		s--;
+ 	
+-	for (s2 = s ; *s2 && *s2 != '/' ; s2--)
+-	;
++	// for (s2 = s ; *s2 && *s2 != '/' ; s2--) ; default:buggy
++	for(s2=s; s2!=in && *s2 !='/'; s2--) ;
+ 	
+ 	if (s-s2 < 2)
+ 		strcpy (out,"?model?");
+@@ -1134,7 +1142,7 @@
+ #endif
+ 		Con_Printf ("Playing demo version.\n");
+ 
+-		if (com_modified)
++		if (0 /*com_modified*/)
+ 			Sys_Error ("You must have the full version to use modified games");
+ 		return;
+ 	}
+@@ -1929,7 +1937,7 @@
+ 	if (numpackfiles > MAX_FILES_IN_PACK)
+ 		Sys_Error ("%s has %i files", packfile, numpackfiles);
+ 
+-	if (numpackfiles != PAK0_COUNT && numpackfiles != PAK2_COUNT)
++	if (numpackfiles != PAK0_COUNT && numpackfiles != PAK2_COUNT && numpackfiles != PAK0DEM_COUNT)
+ 		com_modified = true;    // not the original file
+ 
+ 	Sys_FileSeek (packhandle, header.dirofs);
+@@ -1939,7 +1947,7 @@
+ 	CRC_Init (&crc);
+ 	for (i=0 ; i<header.dirlen ; i++)
+ 		CRC_ProcessByte (&crc, ((byte *)info)[i]);
+-	if (crc != PAK0_CRC && crc != PAK2_CRC)
++	if (crc != PAK0_CRC && crc != PAK2_CRC && crc != PAK0DEM_CRC)
+ 		com_modified = true;
+ 
+ 	newfiles = Hunk_AllocName (numpackfiles * sizeof(packfile_t), "packfile");
+@@ -2062,7 +2070,15 @@
+ // start up with GAMENAME by default (id1)
+ //
+ 	COM_AddGameDirectory (va("%s/"GAMENAME, basedir) );
++	{ char buf[MAX_OSPATH]; void *dir;
++	sprintf(buf,"%s/portals",basedir);
++	dir = opendir(buf);
++	if (dir) {
++		closedir(dir);
+ 	COM_AddGameDirectory (va("%s/portals", basedir) );
++		isH2MP = true;
++	}
++	}
+ 
+ /*	if (COM_CheckParm ("-rogue"))
+ 		COM_AddGameDirectory (va("%s/rogue", basedir) );
+diff -u -w -x '*.o' -B H2MP.orig/code/cvar.c H2MP/code/cvar.c
+--- H2MP.orig/code/cvar.c	2000-11-10 19:04:34.000000000 +0900
++++ H2MP/code/cvar.c	2002-06-25 18:12:19.000000000 +0900
+@@ -1,7 +1,9 @@
+ // cvar.c -- dynamic variable tracking
+ 
+ #include "quakedef.h"
++#ifdef _WIN32
+ #include "winquake.h"
++#endif
+ 
+ cvar_t	*cvar_vars;
+ char	*cvar_null_string = "";
+diff -u -w -x '*.o' -B H2MP.orig/code/d_polyse.c H2MP/code/d_polyse.c
+--- H2MP.orig/code/d_polyse.c	2000-11-10 19:04:36.000000000 +0900
++++ H2MP/code/d_polyse.c	2002-07-02 03:29:30.000000000 +0900
+@@ -129,7 +129,7 @@
+ 	}
+ }
+ 
+-
++#if 0 /* this func is obsolute */
+ /*
+ ================
+ D_PolysetDrawFinalVerts
+@@ -161,7 +161,7 @@
+ 		}
+ 	}
+ }
+-
++#endif
+ 
+ /*
+ ================
+Only in H2MP/code: dc
+diff -u -w -x '*.o' -B H2MP.orig/code/gl_draw.c H2MP/code/gl_draw.c
+--- H2MP.orig/code/gl_draw.c	2000-11-10 19:04:36.000000000 +0900
++++ H2MP/code/gl_draw.c	2002-07-10 19:31:51.000000000 +0900
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include "quakedef.h"
++#include <stdlib.h> /* for malloc */
+ 
+ extern int ColorIndex[16];
+ extern unsigned ColorPercent[16];
+@@ -15,8 +16,9 @@
+ #define MAX_DISC 18
+ 
+ cvar_t		gl_nobind = {"gl_nobind", "0"};
+-cvar_t		gl_max_size = {"gl_max_size", "1024"};
+-cvar_t		gl_round_down = {"gl_round_down", "0"};
++cvar_t		gl_max_size = {"gl_max_size", "256"};
++cvar_t		gl_min_size = {"gl_min_size", "8"};
++cvar_t		gl_round_down = {"gl_round_down", "1"}; /* by BERO */
+ cvar_t		gl_picmip = {"gl_picmip", "0"};
+ 
+ byte		*draw_chars;				// 8*8 graphic characters
+@@ -46,20 +48,22 @@
+ 
+ int		texels;
+ 
+-qboolean is_3dfx = false;
+-qboolean is_PowerVR = false;
++//qboolean is_3dfx = false;
++//qboolean is_PowerVR = false;
+ //qboolean is_3dfx = true;
+ //qboolean is_PowerVR = true;
+ 
++#define	IDLEN	32
++
+ typedef struct
+ {
+ 	int		texnum;
+-	char	identifier[64];
+-	int		width, height;
++	char	identifier[IDLEN];
++	short		width, height;
+ 	qboolean	mipmap;
+ } gltexture_t;
+ 
+-#define MAX_GLTEXTURES	2048
++#define MAX_GLTEXTURES	1024 /* 2048 */
+ gltexture_t	gltextures[MAX_GLTEXTURES];
+ int			numgltextures;
+ 
+@@ -71,7 +75,11 @@
+ 	if (currenttexture == texnum)
+ 		return;
+ 	currenttexture = texnum;
++#ifdef _WIN32
+ 	bindTexFunc (GL_TEXTURE_2D, texnum);
++#else
++	glBindTexture (GL_TEXTURE_2D, texnum);
++#endif
+ }
+ 
+ void GL_Texels_f (void)
+@@ -95,7 +103,7 @@
+ #define BLOCK_HEIGHT	256
+ 
+ int			scrap_allocated[MAX_SCRAPS][BLOCK_WIDTH];
+-byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT*4];
++byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT /**4 scrap is 8bit */];
+ qboolean	scrap_dirty;
+ int			scrap_texnum;
+ 
+@@ -444,11 +452,12 @@
+ 
+ 	Cvar_RegisterVariable (&gl_nobind);
+ 	Cvar_RegisterVariable (&gl_max_size);
++	Cvar_RegisterVariable (&gl_min_size);
+ 	Cvar_RegisterVariable (&gl_round_down);
+ 	Cvar_RegisterVariable (&gl_picmip);
+ 
+ 	// 3dfx can only handle 256 wide textures
+-	if (is_3dfx || is_PowerVR)
++	if (0 /*is_3dfx || is_PowerVR*/)
+ 	{
+ 		Cvar_Set ("gl_max_size", "256");
+ 	}
+@@ -1227,22 +1236,40 @@
+ 	}
+ }
+ 
++#define	NOMEM
++#define	MALLOC(s)	alloca(s)
++#define	FREE(p)		
++
+ // Acts the same as glTexImage2D, except that it maps color into the
+ // current palette and uses paletteized textures.
+ static void fxPalTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
+ {
++#ifdef	NOMEM
++	unsigned char *dest_image = MALLOC(width*height);
++#else
+ 	static unsigned char dest_image[256*256];
++#endif
+ 	long i;
+ 	long mip_width, mip_height;
++	int fmt;
+ 
+ 	mip_width = width;
+ 	mip_height = height;
+ 
+-	if( internalformat != 3 )
++	if( internalformat != 3 && internalformat != 4 )
+ 		Sys_Error( "fxPalTexImage2D: internalformat != 3" );
++	fmt = 1;
+ 	for( i = 0; i < mip_width * mip_height; i++ )
+ 	{
+-		int r, g, b, index;
++		int r, g, b, a, index;
++		if (internalformat == 4) {
++			a = ( ( unsigned char * )pixels )[i * 4+3];
++			if (a==0) {
++				dest_image[i] = 255;
++				fmt = GL_KOS_COLOR_INDEX8_WITHALPHA;
++				continue;
++			}
++		}
+ 		r = ( ( unsigned char * )pixels )[i * 4];
+ 		g = ( ( unsigned char * )pixels )[i * 4+1];
+ 		b = ( ( unsigned char * )pixels )[i * 4+2];
+@@ -1256,9 +1283,12 @@
+ //		dest_image[i] = ( ( unsigned char * )pixels )[i*4];
+ 	}
+ //	glTexImage2D( target, level, 1, width, height, border, GL_LUMINANCE, GL_UNSIGNED_BYTE, dest_image );
+-	glTexImage2D( target, level, 1, width, height, border, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, dest_image );
++	glTexImage2D( target, level, fmt, width, height, border, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, dest_image );
+ /*	if( fxMarkPalTextureExtension )
+ 		fxMarkPalTextureExtension();*/
++#ifdef	NOMEM
++	FREE(dest_image);
++#endif
+ }
+ 
+ 
+@@ -1267,10 +1297,14 @@
+ GL_Upload32
+ ===============
+ */
+-void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
++void GL_Upload32_ (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha,qboolean upload8)
+ {
+ 	int			samples;
++#ifdef	NOMEM
++	unsigned	*scaled;	// [512*256];
++#else
+ 	static	unsigned	scaled[1024*512];	// [512*256];
++#endif
+ 	int			scaled_width, scaled_height;
+ 
+ 	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
+@@ -1293,12 +1327,21 @@
+ 		scaled_width = gl_max_size.value;
+ 	if (scaled_height > gl_max_size.value)
+ 		scaled_height = gl_max_size.value;
++	if (scaled_width < gl_min_size.value)
++		scaled_width = gl_max_size.value;
++	if (scaled_height < gl_min_size.value)
++		scaled_height = gl_max_size.value;
+ 
++#ifdef	NOMEM
++	scaled = MALLOC(scaled_width * scaled_height * sizeof(*scaled));
++	if (scaled==NULL)
++#else
+ 	if (scaled_width * scaled_height > sizeof(scaled)/4)
++#endif
+ 		Sys_Error ("GL_LoadTexture: too big");
+ 
+ 	// 3dfx has some aspect ratio constraints. . . can't go beyond 8 to 1 or below 1 to 8.
+-	if( is_3dfx )
++/*	if( is_3dfx )
+ 	{
+ 		if( scaled_width * 8 < scaled_height )
+ 		{
+@@ -1308,7 +1351,7 @@
+ 		{
+ 			scaled_height = scaled_width >> 3;
+ 		}
+-	}
++	} */
+ 
+ 	samples = alpha ? gl_alpha_format : gl_solid_format;
+ 
+@@ -1329,6 +1372,9 @@
+ 	{
+ 		if (!mipmap)
+ 		{
++			if (is8bit && (samples==3 || upload8))
++				fxPalTexImage2D( GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
++			else 
+ 			glTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+ 			goto done;
+ 		}
+@@ -1341,7 +1387,7 @@
+ 
+ 	// If you are on a 3Dfx card and your texture has no alpha, then download it
+ 	// as a palettized texture to save memory.
+-	if( fxSetPaletteExtension && ( samples == 3 ) )
++	if( /*fxSetPaletteExtension*/ is8bit && (samples==3 || upload8) )
+ 	{
+ 		fxPalTexImage2D( GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled );
+ 	}
+@@ -1369,7 +1415,7 @@
+ 
+ 			// If you are on a 3Dfx card and your texture has no alpha, then download it
+ 			// as a palettized texture to save memory.
+-			if( fxSetPaletteExtension && ( samples == 3) )
++			if( /*fxSetPaletteExtension*/is8bit && (samples==3 || upload8) )
+ 			{
+ 				fxPalTexImage2D (GL_TEXTURE_2D, miplevel, samples, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+ 			}
+@@ -1382,6 +1428,9 @@
+ done: ;
+ #endif
+ 
++#ifdef	NOMEM
++	FREE(scaled);
++#endif
+ 
+ 	  if (mipmap)
+ 	  {
+@@ -1395,7 +1444,6 @@
+ 	  }
+ }
+ 
+-static	unsigned	trans[640*480]; 	// FIXME, temporary
+ 
+ /*
+ ===============
+@@ -1411,10 +1459,19 @@
+ */
+ void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha, int mode)
+ {
++#ifdef	NOMEM
++	unsigned	*trans = MALLOC(width*height*sizeof(unsigned));
++#else
++static	unsigned	trans[640*480]; 	// FIXME, temporary
++#endif
+ 	int			i, s;
+ 	qboolean	noalpha;
+ 	int			p;
+ 
++//	alpha = mode = 0;
++	mipmap = 0; /* dc don't support */
++	printf("%d x %d\n",width,height);
++
+ 	s = width*height;
+ 	// if there are no transparent pixels, make it a 3 component
+ 	// texture even if it was specified as otherwise
+@@ -1510,12 +1567,13 @@
+ 			}
+ 			break;
+ 		case 2:
+-			alpha = true;
+ 			for (i=0 ; i<s ; i++)
+ 			{
+ 				p = data[i];
+-				if (p == 0)
++				if (p == 0) {
+ 					trans[i] &= 0x00ffffff;
++					alpha = true;
++				}
+ 			}
+ 			break;
+ 		case 3:
+@@ -1543,7 +1601,10 @@
+ 		}
+ 	}
+ 
+-	GL_Upload32 (trans, width, height, mipmap, alpha);
++	GL_Upload32_ (trans, width, height, mipmap, alpha, mode==0 || mode==2);
++#ifdef	NOMEM
++	FREE(trans);
++#endif
+ }
+ 
+ /*
+@@ -1562,6 +1623,8 @@
+ 		return -1;
+ 
+ 	sprintf (search, "%s%d%d",identifier,width,height);
++	if (strlen(search)>IDLEN-1)
++		Sys_Error("long id");
+ 
+ 	// see if the texture is allready present
+ 	if (identifier[0])
+@@ -1581,6 +1644,8 @@
+ 		glt = &gltextures[numgltextures];
+ 	}
+ 	numgltextures++;
++	if (numgltextures==MAX_GLTEXTURES)
++		Sys_Error("numgltextures==MAX_GLTEXTURES");
+ 
+ 	strcpy(glt->identifier, search);
+ 	glt->texnum = texture_extension_number;
+diff -u -w -x '*.o' -B H2MP.orig/code/gl_mesh.c H2MP/code/gl_mesh.c
+--- H2MP.orig/code/gl_mesh.c	2000-11-10 19:04:36.000000000 +0900
++++ H2MP/code/gl_mesh.c	2002-06-26 00:15:52.000000000 +0900
+@@ -13,7 +13,7 @@
+ model_t		*aliasmodel;
+ aliashdr_t	*paliashdr;
+ 
+-qboolean	used[8192];
++char	used[8192]; /* qboolean -> char for size */
+ 
+ // the command list holds counts and s/t values that are valid for
+ // every frame
+@@ -22,7 +22,7 @@
+ 
+ // all frames will have their vertexes rearranged and expanded
+ // so they are in the order expected by the command list
+-int		vertexorder[8192];
++short		vertexorder[8192]; /* int->short for size */
+ int		numorder;
+ 
+ int		allverts, alltris;
+diff -u -w -x '*.o' -B H2MP.orig/code/gl_model.c H2MP/code/gl_model.c
+--- H2MP.orig/code/gl_model.c	2000-11-10 19:04:36.000000000 +0900
++++ H2MP/code/gl_model.c	2002-06-26 01:29:44.000000000 +0900
+@@ -23,7 +23,7 @@
+ 
+ byte	mod_novis[MAX_MAP_LEAFS/8];
+ 
+-#define	MAX_MOD_KNOWN	1500
++#define	MAX_MOD_KNOWN	500 /*1500*/
+ model_t	mod_known[MAX_MOD_KNOWN];
+ int		mod_numknown;
+ 
+@@ -1277,7 +1277,7 @@
+ trivertx_t	*poseverts[MAXALIASFRAMES];
+ int			posenum;
+ 
+-byte		player_8bit_texels[NUM_CLASSES][620*245];
++byte		*player_8bit_texels[NUM_CLASSES]; //[620*245];
+ 
+ static float	aliastransform[3][4];
+ 
+@@ -1514,39 +1514,41 @@
+ 
+ 	for (i=0 ; i<numskins ; i++)
+ 	{
++		int n;
+ 		Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
+ 
+ 		s = pheader->skinwidth * pheader->skinheight;
+ 		// save 8 bit texels for the player model to remap
++		n = -1;
+ 		if (!strcmp(loadmodel->name,"models/paladin.mdl"))
+ 		{
+-			if (s > sizeof(player_8bit_texels[0]))
+-				Sys_Error ("Player skin too large");
+-			memcpy (player_8bit_texels[0], (byte *)(pskintype + 1), s);
++			n = 0;
+ 		}
+ 		else if (!strcmp(loadmodel->name,"models/crusader.mdl"))
+ 		{
+-			if (s > sizeof(player_8bit_texels[1]))
+-				Sys_Error ("Player skin too large");
+-			memcpy (player_8bit_texels[1], (byte *)(pskintype + 1), s);
++			n = 1;
+ 		}
+ 		else if (!strcmp(loadmodel->name,"models/necro.mdl"))
+ 		{
+-			if (s > sizeof(player_8bit_texels[2]))
+-				Sys_Error ("Player skin too large");
+-			memcpy (player_8bit_texels[2], (byte *)(pskintype + 1), s);
++			n = 2;
+ 		}
+ 		else if (!strcmp(loadmodel->name,"models/assassin.mdl"))
+ 		{
+-			if (s > sizeof(player_8bit_texels[3]))
+-				Sys_Error ("Player skin too large");
+-			memcpy (player_8bit_texels[3], (byte *)(pskintype + 1), s);
++			n = 3;
+ 		}
+ 		else if (!strcmp(loadmodel->name,"models/succubus.mdl"))
+ 		{
+-			if (s > sizeof(player_8bit_texels[4]))
+-				Sys_Error ("Player skin too large");
++			n = 4;
++		}
++		if (n>0) {
++			if (player_8bit_texels[n]) {
++				free(player_8bit_texels[n]);
++			}
++			player_8bit_texels[n] = malloc(s);
++			if (player_8bit_texels[n]==NULL)
++				Sys_Error ("can't alloc player skin");
+ 			memcpy (player_8bit_texels[4], (byte *)(pskintype + 1), s);
++			memcpy (player_8bit_texels[n], (byte *)(pskintype + 1), s);
+ 		}
+ 
+ 		sprintf (name, "%s_%i", loadmodel->name, i);
+diff -u -w -x '*.o' -B H2MP.orig/code/gl_rmisc.c H2MP/code/gl_rmisc.c
+--- H2MP.orig/code/gl_rmisc.c	2000-11-10 19:04:38.000000000 +0900
++++ H2MP/code/gl_rmisc.c	2002-06-25 22:26:48.000000000 +0900
+@@ -237,7 +237,7 @@
+ */
+ void R_TranslatePlayerSkin (int playernum)
+ {
+-	extern	byte		player_8bit_texels[NUM_CLASSES][620*245];
++	extern	byte		*player_8bit_texels[NUM_CLASSES];
+ 
+ 	int		top, bottom;
+ 	byte	translate[256];
+@@ -290,7 +290,7 @@
+ 	s = paliashdr->skinwidth * paliashdr->skinheight;
+ 
+ 	if (playerclass >= 1 && 
+-		playerclass <= NUM_CLASSES)
++		playerclass <= _NUM_CLASSES)
+ 		original = player_8bit_texels[playerclass-1];
+ 	else
+ 		original = player_8bit_texels[0];
+diff -u -w -x '*.o' -B H2MP.orig/code/gl_rsurf.c H2MP/code/gl_rsurf.c
+--- H2MP.orig/code/gl_rsurf.c	2000-11-10 19:04:38.000000000 +0900
++++ H2MP/code/gl_rsurf.c	2002-07-02 02:06:05.000000000 +0900
+@@ -18,7 +18,7 @@
+ #define	BLOCK_WIDTH		128
+ #define	BLOCK_HEIGHT	128
+ 
+-#define	MAX_LIGHTMAPS	64
++#define	MAX_LIGHTMAPS	16//64
+ int			active_lightmaps;
+ 
+ glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
+@@ -28,7 +28,7 @@
+ 
+ // the lightmap texture data needs to be kept in
+ // main memory so texsubimage can update properly
+-byte		lightmaps[4*MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT];
++byte		lightmaps[/* 4* lightmap=1 */ MAX_LIGHTMAPS*BLOCK_WIDTH*BLOCK_HEIGHT];
+ 
+ 
+ /*
+diff -u -w -x '*.o' -B H2MP.orig/code/gl_screen.c H2MP/code/gl_screen.c
+--- H2MP.orig/code/gl_screen.c	2000-11-10 19:04:38.000000000 +0900
++++ H2MP/code/gl_screen.c	2002-06-25 21:45:58.000000000 +0900
+@@ -141,6 +141,8 @@
+ 	unsigned int check;
+ 	char *newmessage;
+ 
++	if (!isH2MP) return;
++
+ 	strcpy(infomessage, "Objectives:");
+ 
+ 	if (!pr_global_info_strings)
+Only in H2MP/code: gl_viddc.c
+Only in H2MP/code: glhexen2.map
+diff -u -w -x '*.o' -B H2MP.orig/code/glquake.h H2MP/code/glquake.h
+--- H2MP.orig/code/glquake.h	2000-11-10 19:04:38.000000000 +0900
++++ H2MP/code/glquake.h	2002-06-25 20:24:40.000000000 +0900
+@@ -8,15 +8,17 @@
+ #pragma warning(disable : 4136)     // X86
+ #pragma warning(disable : 4051)     // ALPHA
+   
++#ifdef _WIN32
+ #include <windows.h>
++#endif
+ 
+-#include <gl\gl.h>
+-#include <gl\glu.h>
++#include <GL/gl.h>
++#include <GL/glu.h>
+ 
+ void GL_BeginRendering (int *x, int *y, int *width, int *height);
+ void GL_EndRendering (void);
+ 
+-
++#ifdef _WIN32
+ // Function prototypes for the Texture Object Extension routines
+ typedef GLboolean (APIENTRY *ARETEXRESFUNCPTR)(GLsizei, const GLuint *,
+                     const GLboolean *);
+@@ -37,10 +39,12 @@
+ extern  FX_DISPLAY_MODE_EXT fxDisplayModeExtension;
+ extern  FX_SET_PALETTE_EXT fxSetPaletteExtension;
+ extern  FX_MARK_PAL_TEXTURE_EXT fxMarkPalTextureExtension;
++#endif
++extern qboolean is8bit;
+ 
+-#define INVERSE_PAL_R_BITS 6
+-#define INVERSE_PAL_G_BITS 6
+-#define INVERSE_PAL_B_BITS 6
++#define INVERSE_PAL_R_BITS 5
++#define INVERSE_PAL_G_BITS 5
++#define INVERSE_PAL_B_BITS 5
+ #define INVERSE_PAL_TOTAL_BITS \
+ 	( INVERSE_PAL_R_BITS + INVERSE_PAL_G_BITS + INVERSE_PAL_B_BITS )
+ 
+@@ -56,7 +60,7 @@
+ 
+ void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
+ void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha, int mode);
+-int GL_LoadTexture (char *identifier, int width, int height, byte *data, int mipmap, int alpha, int mode);
++int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int mode);
+ int GL_LoadTransTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, byte Alpha);
+ int GL_FindTexture (char *identifier);
+ 
+@@ -77,11 +81,12 @@
+ 
+ extern	int glx, gly, glwidth, glheight;
+ 
++#ifdef	_WIN32
+ extern	PROC glArrayElementEXT;
+ extern	PROC glColorPointerEXT;
+ extern	PROC glTexturePointerEXT;
+ extern	PROC glVertexPointerEXT;
+-
++#endif
+ 
+ // r_local.h -- private refresh defs
+ 
+diff -u -w -x '*.o' -B H2MP.orig/code/host_cmd.c H2MP/code/host_cmd.c
+--- H2MP.orig/code/host_cmd.c	2000-11-10 19:04:38.000000000 +0900
++++ H2MP/code/host_cmd.c	2002-07-17 00:30:11.000000000 +0900
+@@ -463,12 +463,17 @@
+ 	tblock = localtime(&TempTime);
+ 	strftime(kills,sizeof(kills),ShortTime,tblock);
+ 
++#ifdef DC
++	// "07/07/2002 10:10" .. 16 char
++	memcpy (text+32-strlen(kills),kills,strlen(kills));
++#else
+ 	memcpy (text+21, kills, strlen(kills));
+ // convert space to _ to make stdio happy
+ 	for (i=0 ; i<SAVEGAME_COMMENT_LENGTH ; i++)
+ 		if (text[i] == ' ')
+ 			text[i] = '_';
+ 	text[SAVEGAME_COMMENT_LENGTH] = '\0';
++#endif
+ }
+ 
+ /*
+@@ -476,12 +481,45 @@
+ Host_Savegame_f
+ ===============
+ */
++#ifdef DC
++#include "vmuheader.h"
++extern char *get_savedir(void);
++#define	com_savedir	get_savedir()
++#include <unistd.h>
++#include <fcntl.h>
++
++#endif
++
++#ifdef	USE_ZLIB
++#include <zlib.h>
++#define	fopen	gzopen
++#define	fdopen	gzdopen
++#define	fprintf	gzprintf
++#define	fscanf(f,fmt,arg)	do { gzgets(f,str,sizeof(str));sscanf(str,fmt,arg); } while(0)
++#define	feof	gzeof
++#define	fgetc	gzgetc
++#define	fclose	gzclose
++#define	ferror	gz_ferror
++
++static inline int gz_ferror(gzFile f)
++{
++	int ret;
++	gzerror(f,&ret);
++	return ret;
++}
++
++#endif
++
+ void Host_Savegame_f (void)
+ {
++#ifdef	USE_ZLIB
++	gzFile	f;
++#else
+ 	FILE	*f;
++#endif
+ 	int		i;
+ 	char	comment[SAVEGAME_COMMENT_LENGTH+1];
+-//	char	name[MAX_OSPATH],dest[MAX_OSPATH],tempdir[MAX_OSPATH];
++	char	name[MAX_OSPATH],dest[MAX_OSPATH],tempdir[MAX_OSPATH];
+ 	qboolean error_state = false;
+ 	int attempts = 0;
+ 	char *message;
+@@ -537,26 +575,53 @@
+ 	retry:
+ 	attempts++;
+ 
++#ifdef	DC
++	sprintf (name, "%s_*.gip", Cmd_Argv(1));
++
++	CL_RemoveMatchFiles(com_savedir,name);
++#else
+ 	sprintf (name, "%s/%s", com_savedir, Cmd_Argv(1));
+-	Sys_mkdir (name);
++
++	Sys_mkdir (name); //ignore on DC
+ 
+ 	CL_RemoveGIPFiles(name);
++#endif
+ 
+ 	i = GetTempPath(sizeof(tempdir),tempdir);
+ 	if (!i) 
+ 	{
+-		sprintf(tempdir,"%s\\",com_savedir);
++		sprintf(tempdir,"%s/",com_savedir);
+ 	}
+ 
+ 	sprintf (name, "%sclients.gip",tempdir);
+ 	DeleteFile(name);
+ 
+ 	sprintf (name, "%s*.gip", tempdir);
++#ifdef	DC
++	sprintf (dest, "%s/%s_",com_savedir, Cmd_Argv(1));
++#else
+ 	sprintf (dest, "%s/%s/",com_savedir, Cmd_Argv(1));
++#endif
+ 	Con_Printf ("Saving game to %s...\n", dest);
+ 
+ 	error_state = CL_CopyFiles(tempdir, name, dest);
+ 
++#ifdef	DC
++	sprintf(dest,"%s/%s_info.dat",com_savedir, Cmd_Argv(1));
++	{ int fd;
++	fd = _open (dest, O_WRONLY);
++	if (fd==-1)
++	{
++		Con_Printf ("ERROR: couldn't open.\n");
++		return;
++	}
++
++	Host_SavegameComment (comment);
++	memcpy(vmuheader.desc_dc,comment,sizeof(vmuheader.desc_dc));
++	_write(fd,&vmuheader,sizeof(vmuheader));
++	f = fdopen(fd,"w");
++	}
++#else
+ 	sprintf(dest,"%s/%s/info.dat",com_savedir, Cmd_Argv(1));
+ 	f = fopen (dest, "w");
+ 	if (!f)
+@@ -568,6 +633,7 @@
+ 	fprintf (f, "%i\n", SAVEGAME_VERSION);
+ 	Host_SavegameComment (comment);
+ 	fprintf (f, "%s\n", comment);
++#endif
+ 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+ 		fprintf (f, "%f\n", svs.clients->spawn_parms[i]);
+ 	fprintf (f, "%d\n", current_skill);
+@@ -610,10 +676,18 @@
+ */
+ void Host_Loadgame_f (void)
+ {
++#ifdef USE_ZLIB
++	gzFile	f;
++#else
+ 	FILE	*f;
++#endif
+ 	char	mapname[MAX_QPATH];
+ 	float	time, tfloat;
++#ifdef	DC
++	char	str[8192], *start;
++#else
+ 	char	str[32768], *start;
++#endif
+ 	int		i, r;
+ 	edict_t	*ent;
+ 	int		entnum;
+@@ -646,11 +720,24 @@
+ 	i = GetTempPath(sizeof(tempdir),tempdir);
+ 	if (!i) 
+ 	{
+-		sprintf(tempdir,"%s\\",com_savedir);
++		sprintf(tempdir,"%s/",com_savedir);
+ 	}
+ 
+-	sprintf(dest,"%s/info.dat",name);
++#ifdef	DC
++	sprintf(dest,"%s_info.dat",name);
++	{ int fd;
++	fd = _open (dest, O_RDONLY);
++	if (fd==-1)
++	{
++		Con_Printf ("ERROR: couldn't open.\n");
++		return;
++	}
+ 
++	_lseek(fd,sizeof(vmuheader),SEEK_SET);
++	f = fdopen(fd,"r");
++	}
++#else
++	sprintf(dest,"%s/info.dat",name);
+ 	f = fopen (dest, "r");
+ 	if (!f)
+ 	{
+@@ -667,6 +754,7 @@
+ 		return;
+ 	}
+ 	fscanf (f, "%s\n", str);
++#endif
+ 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+ 		fscanf (f, "%f\n", &spawn_parms[i]);
+ // this silliness is so we can load 1.06 save files, which have float skill values
+@@ -724,9 +812,14 @@
+ 	retry:
+ 	attempts++;
+ 
++#ifdef DC
++	sprintf (name, "%s/%s_*.gip", com_savedir, Cmd_Argv(1));
++	sprintf (dest, "%s/",com_savedir);
++#else
+ 	sprintf (name, "%s/%s/*.gip", com_savedir, Cmd_Argv(1));
+ 	sprintf (dest, "%s/%s/",com_savedir, Cmd_Argv(1));
+ 	strcat(tempdir,"/");
++#endif
+ 
+ 	error_state = CL_CopyFiles(dest, name, tempdir);
+ 
+@@ -755,6 +848,7 @@
+ 	Cvar_SetValue ("_cl_playerclass", ent->v.playerclass);//this better be the same as above...
+ 
+ 	// this may be rudundant with the setting in PR_LoadProgs, but not sure so its here too
++	if (isH2MP)
+ 	pr_global_struct->cl_playerclass = ent->v.playerclass;
+ 
+ 	svs.clients->playerclass = ent->v.playerclass;
+@@ -772,8 +866,12 @@
+ #ifdef QUAKE2RJ
+ void SaveGamestate(qboolean ClientsOnly)
+ {
+-//	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++#ifdef	USE_ZLIB
++	gzFile	f;
++#else
+ 	FILE	*f;
++#endif
+ 	int		i;
+ 	char	comment[SAVEGAME_COMMENT_LENGTH+1];
+ 	edict_t	*ent;
+@@ -789,7 +887,7 @@
+ 	i = GetTempPath(sizeof(tempdir),tempdir);
+ 	if (!i) 
+ 	{
+-		sprintf(tempdir,"%s\\",com_savedir);
++		sprintf(tempdir,"%s/",com_savedir);
+ 	}
+ 
+ 	if (ClientsOnly)
+@@ -809,7 +907,29 @@
+ //		Con_Printf ("Saving game to %s...\n", name);
+ 	}
+ 
+-	f = fopen (name, "w");
++#ifdef	DC
++	Con_Printf ("SaveGameState:%s\n", name);
++	
++	{ int fd;
++	fd = _open (name, O_WRONLY);
++	if (fd==-1)
++	{
++		Con_Printf ("ERROR: couldn't open.\n");
++		return;
++	}
++	
++
++	Host_SavegameComment (comment);
++	memcpy(vmuheader.desc_dc,comment,sizeof(vmuheader.desc_dc));
++	_write(fd,&vmuheader,sizeof(vmuheader));
++	f = fdopen(fd,"w");
++	if (f==NULL) {
++		Con_Printf ("error\n");
++		exit(-1);
++	}
++	}
++#else
++	f = fopen (name, "wb");
+ 	if (!f)
+ 	{
+ 		Con_Printf ("ERROR: couldn't open.\n");
+@@ -817,11 +937,14 @@
+ 	}
+ 	
+ 	fprintf (f, "%i\n", SAVEGAME_VERSION);
++#endif
+ 
+ 	if (!ClientsOnly)
+ 	{
++#ifndef	DC
+ 		Host_SavegameComment (comment);
+ 		fprintf (f, "%s\n", comment);
++#endif
+ 	//	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+ 	//		fprintf (f, "%f\n", svs.clients->spawn_parms[i]);
+ 		fprintf (f, "%f\n", skill.value);
+@@ -865,7 +988,7 @@
+ 			{
+ 				fprintf (f, "%i\n",i);
+ 				ED_Write (f, ent);
+-				fflush (f);
++			//	fflush (f);
+ 			}
+ 			host_client++;
+ 		}
+@@ -873,7 +996,7 @@
+ 		{
+ 			fprintf (f, "%i\n",i);
+ 			ED_Write (f, ent);
+-			fflush (f);
++		//	fflush (f);
+ 		}
+ 	}
+ 
+@@ -936,11 +1059,19 @@
+ 
+ int LoadGamestate(char *level, char *startspot, int ClientsMode)
+ {
+-//	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++	char	name[MAX_OSPATH],tempdir[MAX_OSPATH];
++#ifdef	USE_ZLIB
++	gzFile	f;
++#else
+ 	FILE	*f;
++#endif
+ 	char	mapname[MAX_QPATH];
+ 	float	time, sk;
++#ifdef	DC
++	char	str[8192], *start;
++#else
+ 	char	str[32768], *start;
++#endif
+ 	int		i, r;
+ 	edict_t	*ent;
+ 	int		entnum;
+@@ -951,7 +1082,7 @@
+ 	i = GetTempPath(sizeof(tempdir),tempdir);
+ 	if (!i) 
+ 	{
+-		sprintf(tempdir,"%s\\",com_savedir);
++		sprintf(tempdir,"%s/",com_savedir);
+ 	}
+ 
+ 	if (ClientsMode == 1)
+@@ -966,6 +1097,22 @@
+ 			Con_Printf ("Loading game from %s...\n", name);
+ 	}
+ 
++#ifdef	DC
++	Con_Printf ("LoadGameState:%s\n", name);
++	{ int fd;
++	fd = _open (name, O_RDONLY);
++	if (fd==-1)
++	{
++		if (ClientsMode == 2)
++			Con_Printf ("ERROR: couldn't open.\n");
++
++		return -1;
++	}
++
++	_lseek(fd,sizeof(vmuheader),SEEK_SET);
++	f = fdopen(fd,"rb");
++	}
++#else
+ 	f = fopen (name, "r");
+ 	if (!f)
+ 	{
+@@ -983,10 +1130,13 @@
+ 		Con_Printf ("Savegame is version %i, not %i\n", version, SAVEGAME_VERSION);
+ 		return -1;
+ 	}
++#endif
+ 
+ 	if (ClientsMode != 1)
+ 	{
++#ifndef	DC
+ 		fscanf (f, "%s\n", str);
++#endif
+ 	//	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+ 	//		fscanf (f, "%f\n", &spawn_parms[i]);
+ 		fscanf (f, "%f\n", &sk);
+@@ -1019,7 +1169,15 @@
+ // load the edicts out of the savegame file
+ 	while (!feof(f))
+ 	{
++#ifdef	USE_ZLIB
++		do {
++			gzgets(f,str,sizeof(str));
++		} while(str[0]=='\n');
++		sscanf (str, "%i\n",&entnum);
++#else
+ 		fscanf (f, "%i\n",&entnum);
++#endif
++//		printf("<<%i:%s>>\n",entnum,str);
+ 		for (i=0 ; i<sizeof(str)-1 ; i++)
+ 		{
+ 			r = fgetc (f);
+@@ -1035,6 +1193,7 @@
+ 		if (i == sizeof(str)-1)
+ 			Sys_Error ("Loadgame buffer overflow");
+ 		str[i] = 0;
++//		printf("<%s>\n",str);
+ 		start = str;
+ 		start = COM_Parse(str);
+ 		if (!com_token[0])
+@@ -1113,6 +1272,18 @@
+ 	return 0;
+ }
+ 
++#ifdef	USE_ZLIB
++#undef	fopen
++#undef	fdopen
++#undef	fprintf
++#undef	fscanf
++#undef	feof
++#undef	fgetc
++#undef	fclose
++#undef	ferror
++#endif
++
++
+ // changing levels within a unit
+ void Host_Changelevel2_f (void)
+ {
+@@ -1241,7 +1412,7 @@
+ 
+ 		// when classes changes after map load, update cl_playerclass, cl_playerclass should 
+ 		// probably only be used in worldspawn, though
+-		if(pr_global_struct)
++		if(isH2MP && pr_global_struct)
+ 			pr_global_struct->cl_playerclass = newClass;
+ 
+ 		if (cls.state == ca_connected)
+Only in H2MP/code: in_dc.c
+diff -u -w -x '*.o' -B H2MP.orig/code/menu.c H2MP/code/menu.c
+--- H2MP.orig/code/menu.c	2000-11-10 19:04:38.000000000 +0900
++++ H2MP/code/menu.c	2002-07-22 06:54:01.000000000 +0900
+@@ -810,8 +810,8 @@
+ 
+ 	setup_class = cl_playerclass.value;
+ 
+-	if (setup_class < 1 || setup_class > NUM_CLASSES)
+-		setup_class = NUM_CLASSES;
++	if (setup_class < 1 || setup_class > _NUM_CLASSES)
++		setup_class = _NUM_CLASSES;
+ 	setup_class--;
+ 	
+ 	for(i = 0; i < NUM_DIFFLEVELS; ++i)
+@@ -846,7 +846,7 @@
+ 	case K_ENTER:
+ 		Cvar_SetValue ("skill", m_diff_cursor);
+ 		m_entersound = true;
+-		if (m_enter_portals)
++		if (isH2MP && m_enter_portals)
+ 		{
+ 			introTime = 0.0;
+ 			cl.intermission = 12;
+@@ -887,7 +887,7 @@
+ 
+ 
+ int	m_class_cursor;
+-#define	CLASS_ITEMS	NUM_CLASSES
++#define	CLASS_ITEMS	_NUM_CLASSES
+ 
+ void M_Class_Draw (void)
+ {
+@@ -896,7 +896,7 @@
+ 
+ 	ScrollTitle("gfx/menu/title2.lmp");
+ 
+-	for(i = 0; i < NUM_CLASSES; ++i)
++	for(i = 0; i < _NUM_CLASSES; ++i)
+ 		M_DrawBigString (72,60+(i*20),ClassNamesU[i]);
+ 
+ 	f = (int)(host_time * 10)%8;
+@@ -964,7 +964,7 @@
+ /* SINGLE PLAYER MENU */
+ 
+ int	m_singleplayer_cursor;
+-#define	SINGLEPLAYER_ITEMS	5
++#define	SINGLEPLAYER_ITEMS	(4+isH2MP)
+ 
+ 
+ void M_Menu_SinglePlayer_f (void)
+@@ -985,9 +985,11 @@
+ 	M_DrawBigString (72,60+(0*20),"NEW MISSION");
+ 	M_DrawBigString (72,60+(1*20),"LOAD");
+ 	M_DrawBigString (72,60+(2*20),"SAVE");
++	if (isH2MP) {
+ 	if (m_oldmission.value)
+ 		M_DrawBigString (72,60+(3*20),"OLD MISSION");
+ 	M_DrawBigString (72,60+(4*20),"VIEW INTRO");
++	}
+ 	
+ 	f = (int)(host_time * 10)%8;
+ 	M_DrawTransPic (43, 54 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menu/menudot%i.lmp", f+1 ) ) );
+@@ -1006,7 +1008,7 @@
+ 		S_LocalSound ("raven/menu1.wav");
+ 		if (++m_singleplayer_cursor >= SINGLEPLAYER_ITEMS)
+ 			m_singleplayer_cursor = 0;
+-		if (!m_oldmission.value)
++		if (isH2MP && !m_oldmission.value)
+ 		{
+ 			if (m_singleplayer_cursor ==3)
+ 				m_singleplayer_cursor =4;
+@@ -1017,7 +1019,7 @@
+ 		S_LocalSound ("raven/menu1.wav");
+ 		if (--m_singleplayer_cursor < 0)
+ 			m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
+-		if (!m_oldmission.value)
++		if (isH2MP && !m_oldmission.value)
+ 		{
+ 			if (m_singleplayer_cursor ==3)
+ 				m_singleplayer_cursor =2;
+@@ -1025,11 +1027,12 @@
+ 
+ 	case K_ENTER:
+ 		m_entersound = true;
+-
++		if (isH2MP)
+ 		m_enter_portals = 0;
+ 		switch (m_singleplayer_cursor)
+ 		{
+ 		case 0:
++			if (isH2MP)
+ 			m_enter_portals = 1;
+ 			
+ 		case 3:
+@@ -1053,8 +1056,10 @@
+ 			break;
+ 
+ 		case 4:
++			if (isH2MP) {
+ 			key_dest = key_game;
+ 			Cbuf_AddText("playdemo t9\n");
++			}
+ 			break;
+ 		}
+ 	}
+@@ -1069,6 +1074,12 @@
+ char	m_filenames[MAX_SAVEGAMES][SAVEGAME_COMMENT_LENGTH+1];
+ int		loadable[MAX_SAVEGAMES];
+ 
++#ifdef	DC
++#include "vmuheader.h"
++extern char* get_savedir(void);
++#include <fcntl.h>
++#endif
++
+ void M_ScanSaves (void)
+ {
+ 	int		i, j;
+@@ -1076,6 +1087,27 @@
+ 	FILE	*f;
+ 	int		version;
+ 
++#ifdef DC
++	char *savedir = get_savedir();
++	int dir = opendir(savedir); /* quick hack for dir cache */
++	for (i=0 ; i<MAX_SAVEGAMES ; i++)
++	{
++		int fd;
++		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
++		loadable[i] = false;
++		sprintf (name, "%s/s%i_info.dat", savedir, i);
++		fd = _open (name, O_RDONLY);
++		if (!fd)
++			continue;
++		_lseek(fd,16,SEEK_SET);
++		_read(fd,m_filenames[i],32);
++		m_filenames[i][32] = 0;
++	// change _ back to space
++		loadable[i] = true;
++		_close (fd);
++	}
++	if (dir!=0) closedir(dir);
++#else
+ 	for (i=0 ; i<MAX_SAVEGAMES ; i++)
+ 	{
+ 		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
+@@ -1095,6 +1127,7 @@
+ 		loadable[i] = true;
+ 		fclose (f);			
+ 	}
++#endif
+ }
+ 
+ void M_Menu_Load_f (void)
+@@ -1485,8 +1518,8 @@
+ 	setup_top = setup_oldtop = ((int)cl_color.value) >> 4;
+ 	setup_bottom = setup_oldbottom = ((int)cl_color.value) & 15;
+ 	setup_class = cl_playerclass.value;
+-	if (setup_class < 1 || setup_class > NUM_CLASSES)
+-		setup_class = NUM_CLASSES;
++	if (setup_class < 1 || setup_class > _NUM_CLASSES)
++		setup_class = _NUM_CLASSES;
+ }
+ 				
+ 
+@@ -1561,7 +1594,7 @@
+ 		{
+ 			setup_class--;
+ 			if (setup_class < 1) 
+-				setup_class = NUM_CLASSES;
++				setup_class = _NUM_CLASSES;
+ 
+ //			if ((!registered.value && !oem.value) && setup_class >= 2 && setup_class < NUM_CLASSES)
+ //				setup_class = 5;
+@@ -1579,7 +1612,7 @@
+ 		if (setup_cursor == 2)
+ 		{
+ 			setup_class++;
+-			if (setup_class > NUM_CLASSES) 
++			if (setup_class > _NUM_CLASSES) 
+ 				setup_class = 1;
+ 
+ //			if ((!registered.value && !oem.value) && setup_class >= 2 && setup_class < NUM_CLASSES)
+@@ -1875,7 +1908,11 @@
+ 	m_state = m_options;
+ 	m_entersound = true;
+ 
+-	if ((options_cursor == OPT_USEMOUSE) && (modestate != MS_WINDOWED))
++	if ((options_cursor == OPT_USEMOUSE) 
++#ifdef _WIN32
++	&& (modestate != MS_WINDOWED)
++#endif
++	)
+ 		options_cursor = 0;
+ }
+ 
+@@ -3468,8 +3505,8 @@
+ 	m_return_reason[0] = 0;
+ 
+ 	setup_class = cl_playerclass.value;
+-	if (setup_class < 1 || setup_class > NUM_CLASSES)
+-		setup_class = NUM_CLASSES;
++	if (setup_class < 1 || setup_class > _NUM_CLASSES)
++		setup_class = _NUM_CLASSES;
+ 	setup_class--;
+ }
+ 				
+@@ -3623,7 +3660,7 @@
+ 		S_LocalSound ("raven/menu3.wav");
+ 		setup_class--;
+ 		if (setup_class < 0) 
+-			setup_class = NUM_CLASSES -1;
++			setup_class = _NUM_CLASSES -1;
+ 		break;
+ 
+ 	case K_RIGHTARROW:
+@@ -3632,7 +3669,7 @@
+ 
+ 		S_LocalSound ("raven/menu3.wav");
+ 		setup_class++;
+-		if (setup_class > NUM_CLASSES - 1) 
++		if (setup_class > _NUM_CLASSES - 1) 
+ 			setup_class = 0;
+ 		break;
+ 
+@@ -3826,8 +3863,8 @@
+ 		maxplayers = svs.maxclientslimit;
+ 
+ 	setup_class = cl_playerclass.value;
+-	if (setup_class < 1 || setup_class > NUM_CLASSES)
+-		setup_class = NUM_CLASSES;
++	if (setup_class < 1 || setup_class > _NUM_CLASSES)
++		setup_class = _NUM_CLASSES;
+ 	setup_class--;
+ 
+ 	if (oem.value && startepisode < OEM_START)
+@@ -3846,7 +3883,7 @@
+ 		if (gameoptions_cursor >= NUM_GAMEOPTIONS-1)
+ 			gameoptions_cursor = 0;
+ 	}
+-	if (!m_oldmission.value)
++	if (isH2MP && !m_oldmission.value)
+ 	{
+ 		startepisode = MP_START;
+ 	}
+@@ -3984,7 +4021,7 @@
+ 				startepisode = 0;
+ 			else if (startepisode == DM_START)
+ 				startepisode = REG_START;
+-			if (!m_oldmission.value)
++			if (isH2MP && !m_oldmission.value)
+ 			{
+ 				startepisode = MP_START;
+ 			}
+@@ -4011,8 +4048,8 @@
+ //		if ((!registered.value && !oem.value) && setup_class == 2)
+ //			setup_class = 0;
+ 		if (setup_class < 0) 
+-			setup_class = NUM_CLASSES - 1;
+-		if (setup_class > NUM_CLASSES - 1) 
++			setup_class = _NUM_CLASSES - 1;
++		if (setup_class > _NUM_CLASSES - 1) 
+ 			setup_class = 0;
+ 		break;
+ 
+@@ -4057,7 +4094,7 @@
+ 				count++;
+ 			else
+ 			{
+-				if (!m_oldmission.value)
++				if (isH2MP && !m_oldmission.value)
+ 				{
+ 					startepisode = MP_START;
+ 				}
+Only in H2MP/code: midi_null.c
+Only in H2MP/code: net_bsd.c
+Only in H2MP/code: net_none.c
+Only in H2MP/code: net_udp.c
+diff -u -w -x '*.o' -B H2MP.orig/code/pr_edict.c H2MP/code/pr_edict.c
+--- H2MP.orig/code/pr_edict.c	2000-11-10 19:04:40.000000000 +0900
++++ H2MP/code/pr_edict.c	2002-07-16 23:56:39.000000000 +0900
+@@ -6,6 +6,7 @@
+ 
+ #include "quakedef.h"
+ 
++int	isH2MP;
+ dprograms_t		*progs;
+ dfunction_t		*pr_functions;
+ char			*pr_strings;
+@@ -61,6 +62,81 @@
+ 
+ static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
+ 
++typedef struct
++{	int	pad[28];
++	int	self;
++	int	other;
++	int	world;
++	float	time;
++	float	frametime;
++	float	force_retouch;
++	string_t	mapname;
++	string_t	startspot;
++	float	deathmatch;
++	float	randomclass;
++	float	coop;
++	float	teamplay;
++	/* float	cl_playerclass; H2MP only */
++	float	serverflags;
++	float	total_secrets;
++	float	total_monsters;
++	float	found_secrets;
++	float	killed_monsters;
++	float	chunk_cnt;
++	float	done_precache;
++	float	parm1;
++	float	parm2;
++	float	parm4;
++	float	parm5;
++	float	parm6;
++	float	parm7;
++	float	parm8;
++	float	parm9;
++	float	parm10;
++	float	parm11;
++	float	parm12;
++	float	parm13;
++	float	parm14;
++	float	parm15;
++	float	parm16;
++	string_t	parm3;
++	vec3_t	v_forward;
++	vec3_t	v_up;
++	vec3_t	v_right;
++	float	trace_allsolid;
++	float	trace_startsolid;
++	float	trace_fraction;
++	vec3_t	trace_endpos;
++	vec3_t	trace_plane_normal;
++	float	trace_plane_dist;
++	int	trace_ent;
++	float	trace_inopen;
++	float	trace_inwater;
++	int	msg_entity;
++	float	cycle_wrapped;
++	float	crouch_cnt;
++	/* old only */
++	float	modelindex_assassin;
++	float	modelindex_crusader;
++	float	modelindex_paladin;
++	float	modelindex_necromancer;
++	/* end */
++	float	modelindex_sheep;
++	float	num_players;
++	float	exp_mult;
++	func_t	main;
++	func_t	StartFrame;
++	func_t	PlayerPreThink;
++	func_t	PlayerPostThink;
++	func_t	ClientKill;
++	func_t	ClientConnect;
++	func_t	PutClientInServer;
++	func_t	ClientReEnter;
++	func_t	ClientDisconnect;
++	func_t	ClassChangeWeapon;
++} old_globalvars_t;
++#define	OFFSETOF(struc,field)	(int)(&((struc*)0)->field)
++
+ /*
+ =================
+ ED_ClearEdict
+@@ -329,6 +405,16 @@
+ }
+ 
+ 
++int f_tostring(char *s,const char *fmt,float _float)
++{
++	int i,len;
++	len = sprintf (s, fmt, _float);
++	for(i=len-1;i>0 && s[i]=='0';i--) ;
++	if (s[i]!='.') i++;
++	s[i] = 0;
++	return i;
++}
++
+ /*
+ ============
+ PR_ValueString
+@@ -364,10 +450,21 @@
+ 		sprintf (line, "void");
+ 		break;
+ 	case ev_float:
+-		sprintf (line, "%5.1f", val->_float);
++	//	sprintf (line, "%5.1f", val->_float);
++		f_tostring(line,"%5.1f",val->_float);
+ 		break;
+ 	case ev_vector:
+-		sprintf (line, "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
++	//	sprintf (line, "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
++		{ char *p=line;
++		*p++ = '\'';
++		p += f_tostring(p,"%5.1f",val->vector[0]);
++		*p++ = ' ';
++		p += f_tostring(p,"%5.1f",val->vector[1]);
++		*p++ = ' ';
++		p += f_tostring(p,"%5.1f",val->vector[2]);
++		*p++ = '\'';
++		*p = 0;
++		}
+ 		break;
+ 	case ev_pointer:
+ 		sprintf (line, "pointer");
+@@ -416,10 +513,19 @@
+ 		sprintf (line, "void");
+ 		break;
+ 	case ev_float:
+-		sprintf (line, "%f", val->_float);
++	//	sprintf (line, "%f", val->_float);
++		f_tostring(line,"%f",val->_float);
+ 		break;
+ 	case ev_vector:
+-		sprintf (line, "%f %f %f", val->vector[0], val->vector[1], val->vector[2]);
++	//	sprintf (line, "%f %f %f", val->vector[0], val->vector[1], val->vector[2]);
++		{ char *p=line;
++		p += f_tostring(p,"%f",val->vector[0]);
++		*p++ = ' ';
++		p += f_tostring(p,"%f",val->vector[1]);
++		*p++ = ' ';
++		p += f_tostring(p,"%f",val->vector[2]);
++		*p = 0;
++		}
+ 		break;
+ 	default:
+ 		sprintf (line, "bad type %i", type);
+@@ -542,8 +648,17 @@
+ For savegames
+ =============
+ */
++#ifdef USE_ZLIB
++#include <zlib.h>
++#define	fprintf	gzprintf
++
++void ED_Write (FILE *file, edict_t *ed)
++{
++	gzFile	f = (gzFile)file;
++#else
+ void ED_Write (FILE *f, edict_t *ed)
+ {
++#endif
+ 	ddef_t	*d;
+ 	int		*v;
+ 	int		i, j;
+@@ -688,8 +803,14 @@
+ ED_WriteGlobals
+ =============
+ */
++#ifdef USE_ZLIB
++void ED_WriteGlobals (FILE *file)
++{
++	gzFile	f = (gzFile)file;
++#else
+ void ED_WriteGlobals (FILE *f)
+ {
++#endif
+ 	ddef_t		*def;
+ 	int			i;
+ 	char		*name;
+@@ -710,12 +831,17 @@
+ 			continue;
+ 
+ 		name = pr_strings + def->s_name;		
++
+ 		fprintf (f,"\"%s\" ", name);
+ 		fprintf (f,"\"%s\"\n", PR_UglyValueString(type, (eval_t *)&pr_globals[def->ofs]));		
+ 	}
+ 	fprintf (f,"}\n");
+ }
+ 
++#ifdef	USE_ZLIB
++#undef	fprintf
++#endif
++
+ /*
+ =============
+ ED_ParseGlobals
+@@ -1210,10 +1336,13 @@
+ 	for (i=0 ; i<sizeof(*progs)/4 ; i++)
+ 		((int *)progs)[i] = LittleLong ( ((int *)progs)[i] );		
+ 
++#define PROGHEADER_CRC0 38488
+ 	if (progs->version != PROG_VERSION)
+ 		Sys_Error ("progs.dat has wrong version number (%i should be %i)", progs->version, PROG_VERSION);
+-	if (progs->crc != PROGHEADER_CRC)
++	{static int crc[2] = {PROGHEADER_CRC0,PROGHEADER_CRC};
++	if (progs->crc != crc[isH2MP])
+ 		Sys_Error ("progs.dat system vars have been modified, progdefs.h is out of date");
++	}
+ 
+ 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
+ 	pr_strings = (char *)progs + progs->ofs_strings;
+@@ -1266,7 +1395,31 @@
+ 			((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
+ 	}
+ 	// set the cl_playerclass value after pr_global_struct has been created
++	if (isH2MP) {
+ 	pr_global_struct->cl_playerclass = cl_playerclass.value;
++	} else {
++		memmove(&pr_global_struct->serverflags,
++			&((old_globalvars_t*)pr_global_struct)->serverflags,
++			OFFSETOF(globalvars_t,modelindex_sheep) - OFFSETOF(globalvars_t,serverflags)
++			);
++		memmove(&pr_global_struct->modelindex_sheep,
++			&((old_globalvars_t*)pr_global_struct)->modelindex_sheep,
++			sizeof(globalvars_t) - OFFSETOF(globalvars_t,modelindex_sheep)
++			);
++		for (i=0 ; i<progs->numglobaldefs ; i++) {
++			ddef_t	*def = &pr_globaldefs[i];
++			int ofs = def->ofs;
++			if (ofs >= OFFSETOF(old_globalvars_t,modelindex_assassin)/4
++			 && ofs <= OFFSETOF(old_globalvars_t,modelindex_necromancer)/4)
++			 	def->ofs = OFFSETOF(globalvars_t,modelindex_sheep)/4; /* dummy */
++			else if ( ofs >= OFFSETOF(old_globalvars_t,serverflags)/4
++			 && ofs <= OFFSETOF(old_globalvars_t,modelindex_assassin)/4)
++			 	def->ofs+= (OFFSETOF(globalvars_t,serverflags)-OFFSETOF(old_globalvars_t,serverflags))/4;
++			else if ( ofs >= OFFSETOF(old_globalvars_t,modelindex_sheep)/4
++			 && ofs <= OFFSETOF(old_globalvars_t,ClassChangeWeapon)/4) 
++			 	def->ofs+= (OFFSETOF(globalvars_t,modelindex_sheep)-OFFSETOF(old_globalvars_t,modelindex_sheep))/4;
++		}
++	}
+ }
+ 
+ 
+@@ -1275,6 +1428,8 @@
+ 	int i,count,start,Length;
+ 	char NewLineChar;
+ 
++	if (!isH2MP)	return;
++
+ 	pr_global_info_strings = (char *)COM_LoadHunkFile ("infolist.txt");
+ 	if (!pr_global_info_strings)
+ 		Sys_Error ("PR_LoadInfoStrings: couldn't load infolist.txt");
+diff -u -w -x '*.o' -B H2MP.orig/code/quakedef.h H2MP/code/quakedef.h
+--- H2MP.orig/code/quakedef.h	2000-11-10 19:04:40.000000000 +0900
++++ H2MP/code/quakedef.h	2002-06-25 23:09:18.000000000 +0900
+@@ -174,6 +174,7 @@
+ //===========================================
+ 
+ #define NUM_CLASSES					5
++#define	_NUM_CLASSES	(isH2MP + 4)
+ #define ABILITIES_STR_INDEX			400
+ 
+ #ifdef DEMOBUILD
+@@ -374,6 +375,7 @@
+ 										//  running, this reflects the level actually in use)
+ 
+ extern qboolean		isDedicated;
++extern int	isH2MP;
+ 
+ extern int			minimum_memory;
+ 
+Only in H2MP/code: rename.pl
+diff -u -w -x '*.o' -B H2MP.orig/code/sbar.c H2MP/code/sbar.c
+--- H2MP.orig/code/sbar.c	2000-11-10 19:04:42.000000000 +0900
++++ H2MP/code/sbar.c	2002-06-25 22:30:52.000000000 +0900
+@@ -485,9 +485,9 @@
+ 
+ 	//playerClass = cl.v.playerclass;
+ 	playerClass = cl_playerclass.value;
+-	if(playerClass < 1 || playerClass > NUM_CLASSES)
++	if(playerClass < 1 || playerClass > _NUM_CLASSES)
+ 	{ // Default to demoness
+-		playerClass = NUM_CLASSES-1;
++		playerClass = _NUM_CLASSES-1;
+ 	}
+ 
+ 	// Backdrop
+@@ -649,9 +649,9 @@
+ 
+ 	//playerClass = cl.v.playerclass;
+ 	playerClass = cl_playerclass.value -1 ;
+-	if(playerClass < 0 || playerClass >= NUM_CLASSES)
++	if(playerClass < 0 || playerClass >= _NUM_CLASSES)
+ 	{
+-		playerClass = NUM_CLASSES-1;
++		playerClass = _NUM_CLASSES-1;
+ 	}
+ 	a = 0;
+ 	if(cl.v.armor_amulet > 0)
+diff -u -w -x '*.o' -B H2MP.orig/code/snd_dma.c H2MP/code/snd_dma.c
+--- H2MP.orig/code/snd_dma.c	2000-11-10 19:04:44.000000000 +0900
++++ H2MP/code/snd_dma.c	2002-07-01 22:28:20.000000000 +0900
+@@ -235,7 +235,9 @@
+ 
+ void S_Shutdown(void)
+ {
++#ifdef	_WIN32
+ extern 	HINSTANCE hInstDS;	//from snd_win
++#endif
+ 
+ 	if (!sound_started)
+ 		return;
+@@ -250,11 +252,13 @@
+ 	{
+ 		SNDDMA_Shutdown();
+ 	}
++#ifdef	_WIN32
+ 	if (hInstDS)
+ 	{
+ 		FreeLibrary(hInstDS);
+ 		hInstDS=NULL;
+ 	}
++#endif
+ }
+ 
+ 
+@@ -887,7 +891,7 @@
+ 	}
+ 
+ // mix ahead of current position
+-	endtime = soundtime + _snd_mixahead.value * shm->speed;
++	endtime = soundtime + ((int)(_snd_mixahead.value * shm->speed)+3)&~3;
+ 	samps = shm->samples >> (shm->channels-1);
+ 	if (endtime - soundtime > samps)
+ 		endtime = soundtime + samps;
+Only in H2MP/code: snd_dmy.c
+Only in H2MP/code: snd_mix_dc.c
+Only in H2MP/code: snddma_dc.c
+Only in H2MP/code: support
+diff -u -w -x '*.o' -B H2MP.orig/code/sv_user.c H2MP/code/sv_user.c
+--- H2MP.orig/code/sv_user.c	2000-11-10 19:04:44.000000000 +0900
++++ H2MP/code/sv_user.c	2002-06-25 22:14:06.000000000 +0900
+@@ -146,6 +146,8 @@
+ 	else
+ 		friction = sv_friction.value*sv_player->v.friction;
+ 
++	if (!isH2MP)
++		friction = 6;
+ //	if(sv_player->v.friction!=1)//reset their friction to 1, only a trigger touching can change it again
+ //		sv_player->v.friction=1;
+ 
+Only in H2MP/code: sys_dc.c
+Only in H2MP/code: vid_dc.c
+Only in H2MP/code: vmuheader.c
+Only in H2MP/code: vmuheader.h

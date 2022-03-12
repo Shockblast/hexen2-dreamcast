@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 qboolean			isDedicated;
 qboolean	LegitCopy = true;
+
+cvar_t		sys_delay = {"sys_delay","0", true};
 
 /*
 ===============================================================================
@@ -206,76 +208,6 @@ void Sys_LowFPPrecision (void)
 #include <kos.h>
 #include <lwip/lwip.h>
 
-/* KOS_INIT_FLAGS(INIT_DEFAULT | INIT_NET); */
-
-int quake_main (int argc, char **argv)
-{
-	extern int vcrFile;
-	extern int recording;
-	static quakeparms_t    parms;
-	double		time, oldtime, newtime;
-
-	const static char *basedirs[]={
-	"/cd/hexen2", /* installed or shareware */
-//	"/cd/data", /* official CD-ROM */
-	"/pc/hexen2", /* debug */
-	NULL
-	};
-
-	char *basedir;
-	int i;
-	
-	for(i=0;(basedir = basedirs[i])!=NULL;i++) {
-		int fd  = fs_open(basedir,O_DIR);
-		if (fd!=0) {
-			fs_close(fd);
-			break;
-		}
-	}
-	if (basedir==NULL)
-		Sys_Error("can't find quake dir");
-
-	parms.memsize = 9*1024*1024;
-
-	parms.membase = malloc (parms.memsize);
-	parms.basedir = basedir;
-
-//	argc = 0;
-//	argv = NULL;
-
-	COM_InitArgv (argc, argv);
-
-	parms.argc = com_argc;
-	parms.argv = com_argv;
-
-	Host_Init (&parms);
-
-    oldtime = Sys_FloatTime ();
-    while (1)
-    {
-// find time spent rendering last frame
-        newtime = Sys_FloatTime ();
-        time = newtime - oldtime;
-
-        if (cls.state == ca_dedicated)
-        {   // play vcrfiles at max speed
-            if (time < sys_ticrate.value && (vcrFile == -1 || recording) )
-            {
-				usleep(1);
-                continue;       // not time to run a server only tic yet
-            }
-            time = sys_ticrate.value;
-        }
-
-        if (time > sys_ticrate.value*2)
-            oldtime = newtime;
-        else
-            oldtime += time;
-
-        Host_Frame (time);
-    }
-}
-
 int GetTempPath(size_t size,char* buf)
 {
 	strncpy(buf,"/mem/",size);
@@ -302,18 +234,48 @@ char *get_savedir(void)
 	return savedir;
 }
 
+/* KOS_INIT_FLAGS(INIT_DEFAULT | INIT_NET); */
+extern char* menu(int *argc,char **argv,char **basedir);
 
-int main(int argc,char **argv)
+int main (int argc, char **argv)
 {
-#if 1
-	static char *args[10] = {"quake",NULL};
+	extern int vcrFile;
+	extern int recording;
+	static quakeparms_t    parms;
+	double		time, oldtime, newtime;
+
+	const static char *basedirs[]={
+	"/cd/Hexen II", /* installed */
+	"/cd/Hexen II Demo",
+//	"/cd/data", /* official CD-ROM */
+	"/pc/hexen2", /* debug */
+	NULL
+	};
+
+	char *basedir;
+#if 0
+	int i;
 	
-	argc = 2;
-	args[1] = "-noudp";
-//	args[2] = "-game";
-//	args[3] = "bbelief";
-	argv = args;
+	for(i=0;(basedir = basedirs[i])!=NULL;i++) {
+		int fd  = fs_open(basedir,O_DIR);
+		if (fd!=0) {
+			fs_close(fd);
+			break;
+		}
+	}
+	if (basedir==NULL)
+		Sys_Error("can't find quake dir");
+
 #else
+	{
+	static char *args[10] = {"quake",NULL};
+	argc = 1;
+	argv = args;
+	basedir = menu(&argc,argv,basedirs);
+	}
+#endif
+
+#if 0
 	struct ip_addr ipaddr, gw, netmask;
 
 	/* Change these for your network */
@@ -323,5 +285,46 @@ int main(int argc,char **argv)
 	lwip_init_static(&ipaddr, &netmask, &gw);
 #endif
 	fs_mem_init();
-	return quake_main(argc,argv);
+
+	CL_RemoveGIPFiles(NULL);
+
+	parms.memsize = 10*1024*1024;
+
+	parms.membase = malloc (parms.memsize);
+	parms.basedir = basedir;
+
+	COM_InitArgv (argc, argv);
+
+	parms.argc = com_argc;
+	parms.argv = com_argv;
+
+	Host_Init (&parms);
+
+    oldtime = Sys_FloatTime ();
+    while (1)
+    {
+		if (isDedicated)
+		{
+			newtime = Sys_FloatTime ();
+			time = newtime - oldtime;
+
+			while (time < sys_ticrate.value )
+			{
+				Sys_Sleep();
+				newtime = Sys_FloatTime ();
+				time = newtime - oldtime;
+			}
+		}
+		else
+		{
+			newtime = Sys_FloatTime ();
+			time = newtime - oldtime;
+		}
+
+	//	if (sys_delay.value) 
+	//		Sleep(sys_delay.value);
+
+		Host_Frame (time);
+		oldtime = newtime;
+    }
 }

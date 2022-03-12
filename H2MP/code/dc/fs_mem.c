@@ -226,11 +226,11 @@ dirent_t *mem_readdir(uint32 hnd)
 	return &dir->dirent;
 }
 
-int mem_rename(const char *fn)
+int mem_rename(const char *fn,const char *fn2)
 {
 	int i = search_file(fn);
 	if (i==-1) return -1;
-	strcpy(tbl[i].name,fn);
+	strcpy(tbl[i].name,fn2);
 	return 0;
 }
 
@@ -241,7 +241,10 @@ int mem_unlink(const char *fn)
 	i = search_file(fn);
 	if (i==-1) return -1;
 	tbl[i].name[0] = 0;
-	if (tbl[i].data) free(tbl[i].data);
+	if (tbl[i].data) {
+		free(tbl[i].data);
+		printf("free\n");
+	}
 	return 0;
 }
 

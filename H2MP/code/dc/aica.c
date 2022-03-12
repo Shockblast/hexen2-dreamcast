@@ -2,6 +2,7 @@
  * Please see libdream.c for further details.
  *
  * (c)2000 Dan Potter
+ * modify BERO
  */
 #include "aica.h"
 
